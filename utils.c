@@ -4,6 +4,10 @@ void print_message(char* message) {
     write(1, message, my_strlen(message));
 }
 
+void print_error(char* message) {
+    write(2, message, my_strlen(message));
+}
+
 int my_strlen(const char* str_1) {
     int length = 0;
 
