@@ -1,0 +1,1 @@
+This is a small file used to test my_tar. (file1).
