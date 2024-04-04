@@ -31,17 +31,18 @@ int main(int argc, char** argv) {
 void create_archive(int argc, char** argv) {
     char* archive_name = argv[2];
 
-    int archive_file_des = open(archive_name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    //archive file descriptor
+    int archive_fd = open(archive_name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
     for (int i = 3; i < argc; i++) {
-        write_metadata(archive_file_des, argv[i]);
-        write_file_content(archive_file_des, argv[i]);
+        write_metadata(archive_fd, argv[i]);
+        write_file_content(archive_fd, argv[i]);
     }
 
-    close(archive_file_des);
+    close(archive_fd);
 }
 
-void write_metadata(int archive_file_des, const char* file_name) {
+void write_metadata(int archive_fd, const char* file_name) {
     struct stat file_stat;
 
     if (lstat(file_name, &file_stat) == -1) {
@@ -51,21 +52,53 @@ void write_metadata(int archive_file_des, const char* file_name) {
 
     struct FileMetadata metadata;
 
+    my_strncpy(metadata.name, file_name, my_strlen(file_name));
+
     metadata.mode = file_stat.st_mode;
     metadata.uid = file_stat.st_uid;
     metadata.gid = file_stat.st_gid;
     metadata.size = file_stat.st_size;
     metadata.time = file_stat.st_mtim;
 
-    write(archive_file_des, file_name, my_strlen(file_name));
+    //write(archive_fd, file_name, my_strlen(file_name));
 
-    if (write(archive_file_des, &metadata, sizeof(struct FileMetadata)) != sizeof(struct FileMetadata)) {
-        printf("Error writing file stats\n"); //remove later
+    // if (write(archive_fd, &metadata, sizeof(struct FileMetadata)) != sizeof(struct FileMetadata)) {
+    //     printf("Error writing file stats\n"); //remove later
+    //     return;
+    // }
+
+    if (write(archive_fd, &metadata.name, my_strlen(metadata.name)) != my_strlen(metadata.name)) {
+        perror("write file name");
         return;
     }
+
+    if (write(archive_fd, &metadata.mode, sizeof(metadata.mode)) != sizeof(metadata.mode)) {
+        perror("write mode");
+        return;
+    }
+
+    // if (write(archive_fd, &metadata.uid, sizeof(metadata.uid)) != sizeof(metadata.uid)) {
+    //     perror("write uid");
+    //     return;
+    // }
+
+    // if (write(archive_fd, &metadata.gid, sizeof(metadata.gid)) != sizeof(metadata.gid)) {
+    //     perror("write gid");
+    //     return;
+    // }
+
+    // if (write(archive_fd, &metadata.size, sizeof(metadata.size)) != sizeof(metadata.size)) {
+    //     perror("write size");
+    //     return;
+    // }
+
+    // if (write(archive_fd, &metadata.time, sizeof(metadata.time)) != sizeof(metadata.time)) {
+    //     perror("write time");
+    //     return;
+    // }
 }
 
-void write_file_content(int archive_file_des, const char* file_name) {
+void write_file_content(int archive_fd, const char* file_name) {
     int file_fd = open(file_name, O_RDONLY);
 
     if (file_fd == -1) {
@@ -77,7 +110,7 @@ void write_file_content(int archive_file_des, const char* file_name) {
     ssize_t bytes_read;
 
     while ((bytes_read = read(file_fd, buffer, BUFFER_SIZE)) > 0) {
-        if (write(archive_file_des, buffer, bytes_read) != bytes_read) {
+        if (write(archive_fd, buffer, bytes_read) != bytes_read) {
             printf("Error writing file contents\n"); //remove later
             return;
         }
