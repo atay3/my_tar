@@ -65,6 +65,8 @@ void write_metadata(int archive_fd, const char* file_name) {
         return;
     }
 
+    extract_file_type_and_flags(archive_fd, file_stat.st_mode);
+
     write(archive_fd, metadata.mode, my_strlen(metadata.mode));
 
     // if (write(archive_fd, &metadata.mode, sizeof(metadata.mode)) != sizeof(metadata.mode)) {
@@ -122,4 +124,12 @@ void mode_to_octal(mode_t mode, char* str) {
     str[1] = '0' + ((mode >> 3) & 7); //group permissions
     str[2] = '0' + (mode & 7);        //other permissions
     str[3] = '\0';                    //null terminator
+}
+
+void write_file_type_and_flags(int archive_fd, mode_t mode) {
+    mode_t file_type = mode & S_IFMT;
+
+    char file_type_octal = '0' + ((file_type >> 12) & 0x7);
+
+    write(archive_fd, &file_type_octal, 1);
 }

@@ -31,6 +31,7 @@ void write_metadata(int archive_fd, const char* file_name);
 void write_file_content(int archive_fd, const char* file_name);
 void append_archive(int argc, char** argv);
 void mode_to_octal(mode_t mode, char* str);
+void write_file_type_and_flags(int archive_fd, mode_t mode);
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);
 void extract_archive(char* archive_name);
