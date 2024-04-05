@@ -13,7 +13,6 @@
 
 struct FileMetadata {
     char name[256];
-    //mode_t mode; //permissions
     char mode[8];
     uid_t uid; //user id
     gid_t gid; //group id
@@ -31,6 +30,7 @@ void create_archive(int argc, char** argv);
 void write_metadata(int archive_fd, const char* file_name);
 void write_file_content(int archive_fd, const char* file_name);
 void append_archive(int argc, char** argv);
+void mode_to_octal(mode_t mode, char* str);
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);
 void extract_archive(char* archive_name);

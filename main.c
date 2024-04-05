@@ -53,29 +53,24 @@ void write_metadata(int archive_fd, const char* file_name) {
     struct FileMetadata metadata;
 
     my_strncpy(metadata.name, file_name, my_strlen(file_name));
+    mode_to_octal(file_stat.st_mode, metadata.mode);
 
-    metadata.mode = file_stat.st_mode;
     metadata.uid = file_stat.st_uid;
     metadata.gid = file_stat.st_gid;
     metadata.size = file_stat.st_size;
     metadata.time = file_stat.st_mtim;
-
-    //write(archive_fd, file_name, my_strlen(file_name));
-
-    // if (write(archive_fd, &metadata, sizeof(struct FileMetadata)) != sizeof(struct FileMetadata)) {
-    //     printf("Error writing file stats\n"); //remove later
-    //     return;
-    // }
 
     if (write(archive_fd, &metadata.name, my_strlen(metadata.name)) != my_strlen(metadata.name)) {
         perror("write file name");
         return;
     }
 
-    if (write(archive_fd, &metadata.mode, sizeof(metadata.mode)) != sizeof(metadata.mode)) {
-        perror("write mode");
-        return;
-    }
+    write(archive_fd, metadata.mode, my_strlen(metadata.mode));
+
+    // if (write(archive_fd, &metadata.mode, sizeof(metadata.mode)) != sizeof(metadata.mode)) {
+    //     perror("write mode");
+    //     return;
+    // }
 
     // if (write(archive_fd, &metadata.uid, sizeof(metadata.uid)) != sizeof(metadata.uid)) {
     //     perror("write uid");
@@ -117,4 +112,14 @@ void write_file_content(int archive_fd, const char* file_name) {
     }
 
     close(file_fd);
+}
+
+void mode_to_octal(mode_t mode, char* str) {
+    //mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+
+    //convert the permission bits to octal representation manually
+    str[0] = '0' + ((mode >> 6) & 7); //owner permissions
+    str[1] = '0' + ((mode >> 3) & 7); //group permissions
+    str[2] = '0' + (mode & 7);        //other permissions
+    str[3] = '\0';                    //null terminator
 }
