@@ -30,7 +30,7 @@ void create_archive(int argc, char** argv);
 void write_metadata(int archive_fd, const char* file_name);
 void write_file_content(int archive_fd, const char* file_name);
 void append_archive(int argc, char** argv);
-void to_octal(mode_t mode, char* str, int start_index);
+void mode_to_octal(mode_t mode, char* str, int start_index);
 void write_mode(int archive_fd, mode_t mode, char* md_mode);
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);

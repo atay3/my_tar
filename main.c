@@ -53,7 +53,8 @@ void write_metadata(int archive_fd, const char* file_name) {
     struct FileMetadata metadata;
 
     my_strncpy(metadata.name, file_name, my_strlen(file_name));
-    mode_to_octal(file_stat.st_mode, metadata.mode);
+    
+    // mode_to_octal(file_stat.st_mode, metadata.mode);
 
     metadata.uid = file_stat.st_uid;
     metadata.gid = file_stat.st_gid;
@@ -64,10 +65,16 @@ void write_metadata(int archive_fd, const char* file_name) {
         perror("write file name");
         return;
     }
-    printf("File mode: %o\n", file_stat.st_mode);
-    write_file_type_and_flags(archive_fd, file_stat.st_mode);
+    //PRINTING FILE TPYE, FLAGS, AND PERMISSIONS IN OCTAL
+    mode_t file_type = file_stat.st_mode & S_IFMT;
+    printf("file type: %o\n", file_type);
+    mode_t flags = file_stat.st_mode & (S_ISUID | S_ISGID | S_ISVTX);
+    printf("flags: %o\n", flags);
+    printf("permissions: %o\n", file_stat.st_mode & 0777);
 
-    write(archive_fd, metadata.mode, my_strlen(metadata.mode));
+    write_mode(archive_fd, file_stat.st_mode, metadata.mode);
+
+    // write(archive_fd, metadata.mode, my_strlen(metadata.mode));
 
     // if (write(archive_fd, &metadata.mode, sizeof(metadata.mode)) != sizeof(metadata.mode)) {
     //     perror("write mode");
@@ -116,27 +123,34 @@ void write_file_content(int archive_fd, const char* file_name) {
     close(file_fd);
 }
 
-void mode_to_octal(mode_t mode, char* str) {
-    //mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+void mode_to_octal(mode_t mode, char* str, int start_index) {
+    //convert the bits to octal representation manually
+    str[start_index] = '0' + ((mode >> 6) & 0x7);
+    str[start_index + 1] = '0' + ((mode >> 3) & 0x7);
+    str[start_index + 2] = '0' + (mode & 0x7);
 
-    //convert the permission bits to octal representation manually
-    str[0] = '0' + ((mode >> 6) & 0x7); //owner permissions
-    str[1] = '0' + ((mode >> 3) & 0x7); //group permissions
-    str[2] = '0' + (mode & 0x7);        //other permissions
-    str[3] = '\0';                    //null terminator
+    //null terminates the end of the string
+    if (start_index + 3 == 7) {
+        str[start_index + 3] = '\0';
+    }
 }
 
-void write_file_type_and_flags(int archive_fd, mode_t mode) {
-    mode_t file_type = mode & S_IFMT; //extract upper bits of mode
-    mode_t flags = mode & 0777;
+void write_mode(int archive_fd, mode_t mode, char* md_mode) {
+    // mode_t file_type = mode & S_IFMT; //extract file type bits
+    // mode_t flags = mode & (S_ISUID | S_ISGID | S_ISVTX); //extract flags
+    mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO); //extract file permissions
 
-    char file_type_octal = '0' + ((file_type >> 12) & 0x7);
-    char flags_octal[4];
-    flags_octal[0] = '0' + ((flags >> 6) & 0x7);
-    flags_octal[1] = '0' + ((flags >> 3) & 0x7);
-    flags_octal[2] = '0' + (flags & 0x7);
-    flags_octal[3] = '\0';
+    // int permissions_length = 3;
+    int padding = 5;
+    for (int i = 0; i < padding - 1; i++) {
+        md_mode[i] = '0';
+    }
+    mode_to_octal(permissions, md_mode, padding - 1);
 
-    write(archive_fd, &file_type_octal, 1);
-    write(archive_fd, flags_octal, 3);
+    // char file_type_octal = '0' + ((file_type >> 12) & 0x7);
+    // md_mode[0] = file_type_octal;
+    // mode_to_octal(flags, md_mode, 1);
+    // mode_to_octal(permissions, md_mode, 4);
+
+    write(archive_fd, md_mode, my_strlen(md_mode));
 }
