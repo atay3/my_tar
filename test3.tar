@@ -14,8 +14,8 @@ my_tar.h0000644#ifndef MY_TAR_H
 struct FileMetadata {
     char name[256];
     char mode[8];
-    uid_t uid; //user id
-    gid_t gid; //group id
+    char uid[8]; //user id
+    char gid[8]; //group id
     size_t size; //file size
     struct timespec time; //modification time
 };
@@ -31,7 +31,9 @@ void write_metadata(int archive_fd, const char* file_name);
 void write_file_content(int archive_fd, const char* file_name);
 void append_archive(int argc, char** argv);
 void mode_to_octal(mode_t mode, char* str, int start_index);
-void write_mode(int archive_fd, mode_t mode, char* md_mode);
+void write_mode(int archive_fd, mode_t mode, char* octal_str);
+void uid_to_octal(uid_t uid, char* octal_str);
+void write_uid(int archive_fd, uid_t uid, char* octal_str);
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);
 void extract_archive(char* archive_name);
