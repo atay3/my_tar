@@ -1,10 +1,11 @@
 #ifndef MY_TAR_H
 #define MY_TAR_H
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <stdlib.h> //archive.c
+#include <unistd.h> //archive.c
+#include <fcntl.h> //archive.c
+#include <sys/stat.h> //archive.c
+#include <stdint.h> //archive.c
 
 #include <stdio.h>
 

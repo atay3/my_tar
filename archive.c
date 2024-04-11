@@ -91,7 +91,7 @@ void write_file_content(int archive_fd, const char* file_name) {
 void mode_to_octal(mode_t mode, char* str, int start_index) {
     //convert the bits to octal representation manually
     str[start_index] = '0' + ((mode >> 6) & 0x7);
-    str[start_index + 1] = '0' + ((mode >> 3) & 0x7);
+    str[start_index + 1] = '0' + ((mode >> 3) & 0x7); //0x7 similar to 0b111
     str[start_index + 2] = '0' + (mode & 0x7);
 
     //null terminates the end of the string
@@ -120,26 +120,39 @@ void write_mode(int archive_fd, mode_t mode, char* octal_str) {
 }
 
 void uid_to_octal(uid_t uid, char* octal_str) {
-    int i = 0;
-    int end_index = my_strlen(octal_str) - 1;
+    int i = 1;
+    int end_index = 7;
+    octal_str[end_index] = '\0';
+    printf("end index: %d\n", end_index);
 
-    printf("uid: %d, uid octal: %o", uid, uid);
+    printf("uid: %d, uid octal: %o\n", uid, uid);
 
-    while (uid > 0) {
-        octal_str[end_index - i] = '0' + (uid % 8);
-        uid /= 8;
+    while (uid != 0) {
+        uint8_t octal_digit = uid & 0b111;
+        octal_str[end_index - i] = '0' + octal_digit;
+        printf("octal digit: %c\n", octal_str[end_index - i]);
+        uid >>= 3;
+        printf("i in current iteration (index is %d): %d\n", end_index - i, i);
         i++;
     }
 
-    while (i < end_index) {
+    printf("i before padding: %d\n", i);
+    while (i <= end_index) {
+        printf("padding index %d\n", end_index - i);
         octal_str[end_index - i] = '0';
         i++;
+        printf("octal digit: %c\n", octal_str[end_index - i]);
     }
 
-    octal_str[end_index] = '\0';
+    printf("uid in octal: %s\n", octal_str);
 }
 
 void write_uid(int archive_fd, uid_t uid, char* octal_str) {
     uid_to_octal(uid, octal_str);
-    write(archive_fd, octal_str, my_strlen(octal_str));
+    // write(archive_fd, octal_str, my_strlen(octal_str));
+
+    if (write(archive_fd, octal_str, my_strlen(octal_str)) == -1) {
+        printf("error writing uid\n");
+        return;
+    }
 }
