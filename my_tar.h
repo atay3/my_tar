@@ -1,7 +1,7 @@
 #ifndef MY_TAR_H
 #define MY_TAR_H
 
-#include <stdlib.h> //archive.c
+#include <stdlib.h> //utils.c
 #include <unistd.h> //archive.c
 #include <fcntl.h> //archive.c
 #include <sys/stat.h> //archive.c
@@ -17,8 +17,10 @@ struct FileMetadata {
     char mode[8];
     char uid[8]; //user id
     char gid[8]; //group id
-    size_t size; //file size
-    struct timespec time; //modification time
+    char size[12]; //file size
+    time_t time; //modification time
+    //checksum
+    char type; //file type
 };
 
 void print_message(char* message);
@@ -27,6 +29,7 @@ int my_strlen(const char* str_1);
 char* my_strdup(const char* str_1);
 char* my_strncpy(char* str_1, const char* str_2, int length);
 int my_strcmp(const char* str_1, const char* str_2);
+
 void create_archive(int argc, char** argv);
 void write_metadata(int archive_fd, const char* file_name);
 void write_file_content(int archive_fd, const char* file_name);
@@ -35,6 +38,11 @@ void mode_to_octal(mode_t mode, char* str, int start_index);
 void write_mode(int archive_fd, mode_t mode, char* octal_str);
 void uid_to_octal(uid_t uid, char* octal_str);
 void write_uid(int archive_fd, uid_t uid, char* octal_str);
+void gid_to_octal(gid_t gid, char* octal_str);
+void write_gid(int archive_fd, gid_t gid, char* octal_str);
+void size_to_octal(size_t size, char* octal_str);
+void write_size(int archive_fd, size_t size, char* octal_str);
+
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);
 void extract_archive(char* archive_name);

@@ -31,13 +31,11 @@ void write_metadata(int archive_fd, const char* file_name) {
     }
 
     write_mode(archive_fd, file_stat.st_mode, metadata.mode);
-
-    // metadata.uid = file_stat.st_uid;
     write_uid(archive_fd, file_stat.st_uid, metadata.uid);
+    write_gid(archive_fd, file_stat.st_gid, metadata.gid);
+    write_size(archive_fd, file_stat.st_size, metadata.size);
 
-    // metadata.gid = file_stat.st_gid;
-    metadata.size = file_stat.st_size;
-    metadata.time = file_stat.st_mtim;
+    metadata.time = file_stat.st_mtime;
 
     //PRINTING FILE TPYE, FLAGS, AND PERMISSIONS IN OCTAL
     // mode_t file_type = file_stat.st_mode & S_IFMT;
@@ -90,9 +88,9 @@ void write_file_content(int archive_fd, const char* file_name) {
 
 void mode_to_octal(mode_t mode, char* str, int start_index) {
     //convert the bits to octal representation manually
-    str[start_index] = '0' + ((mode >> 6) & 0x7);
-    str[start_index + 1] = '0' + ((mode >> 3) & 0x7); //0x7 similar to 0b111
-    str[start_index + 2] = '0' + (mode & 0x7);
+    str[start_index] = '0' + ((mode >> 6) & 0b111);
+    str[start_index + 1] = '0' + ((mode >> 3) & 0b111); //0x7 similar to 0b111
+    str[start_index + 2] = '0' + (mode & 0b111);
 
     //null terminates the end of the string
     if (start_index + 3 == 7) {
@@ -120,31 +118,30 @@ void write_mode(int archive_fd, mode_t mode, char* octal_str) {
 }
 
 void uid_to_octal(uid_t uid, char* octal_str) {
-    int i = 1;
+    // int i = 1;
     int end_index = 7;
-    octal_str[end_index] = '\0';
-    printf("end index: %d\n", end_index);
-
-    printf("uid: %d, uid octal: %o\n", uid, uid);
+    octal_str[end_index--] = '\0'; //null terminate the string
+    // printf("end index: %d\n", end_index);
+    // printf("uid: %d, uid octal: %o\n", uid, uid);
 
     while (uid != 0) {
         uint8_t octal_digit = uid & 0b111;
-        octal_str[end_index - i] = '0' + octal_digit;
-        printf("octal digit: %c\n", octal_str[end_index - i]);
+        octal_str[end_index--] = '0' + octal_digit;
+        // printf("octal digit: %c\n", octal_str[end_index - i]);
         uid >>= 3;
-        printf("i in current iteration (index is %d): %d\n", end_index - i, i);
-        i++;
+        // printf("i in current iteration (index is %d): %d\n", end_index - i, i);
+        // i++;
     }
 
-    printf("i before padding: %d\n", i);
-    while (i <= end_index) {
-        printf("padding index %d\n", end_index - i);
-        octal_str[end_index - i] = '0';
-        i++;
-        printf("octal digit: %c\n", octal_str[end_index - i]);
+    // printf("i before padding: %d\n", i);
+    while (end_index >= 0) {
+        // printf("padding index %d\n", end_index - i);
+        octal_str[end_index--] = '0';
+        // i++;
+        // printf("octal digit: %c\n", octal_str[end_index - i]);
     }
 
-    printf("uid in octal: %s\n", octal_str);
+    // printf("uid in octal: %s\n", octal_str);
 }
 
 void write_uid(int archive_fd, uid_t uid, char* octal_str) {
@@ -155,4 +152,47 @@ void write_uid(int archive_fd, uid_t uid, char* octal_str) {
         printf("error writing uid\n");
         return;
     }
+}
+
+void gid_to_octal(gid_t gid, char* octal_str) {
+    // int i = 1;
+    int end_index = 7;
+    octal_str[end_index--] = '\0';
+
+    while (gid != 0) {
+        uint8_t octal_digit = gid & 0b111;
+        octal_str[end_index--] = '0' + octal_digit;
+        gid >>= 3;
+        // i++;
+    }
+
+    while (end_index >= 0) {
+        octal_str[end_index--] = '0';
+        // i++;
+    }
+}
+
+void write_gid(int archive_fd, gid_t gid, char* octal_str) {
+    gid_to_octal(gid, octal_str);
+    write(archive_fd, octal_str, my_strlen(octal_str));
+}
+
+void size_to_octal(size_t size, char* octal_str) {
+    int end_index = 11;
+    octal_str[end_index--] = '\0';
+
+    while (size != 0) {
+        uint8_t octal_digit = size & 0b111;
+        octal_str[end_index--] = '0' + octal_digit;
+        size >>= 3;
+    }
+
+    while (end_index >= 0) {
+        octal_str[end_index--] = '0';
+    }
+}
+
+void write_size(int archive_fd, size_t size, char* octal_str) {
+    size_to_octal(size, octal_str);
+    write(archive_fd, octal_str, my_strlen(octal_str));
 }
