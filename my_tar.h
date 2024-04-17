@@ -5,12 +5,15 @@
 #include <unistd.h> //archive.c
 #include <fcntl.h> //archive.c
 #include <sys/stat.h> //archive.c
+// #include <sys/types.h>
 #include <stdint.h> //archive.c
+#include <time.h> //archive.c
 
 #include <stdio.h>
 
 #define ERROR_MSG "my_tar: Insufficient number of arguments\n"
 #define BUFFER_SIZE 1024
+#define MICROSECONDS_PER_SECOND 1000000
 
 struct FileMetadata {
     char name[256];
@@ -18,7 +21,7 @@ struct FileMetadata {
     char uid[8]; //user id
     char gid[8]; //group id
     char size[12]; //file size
-    time_t time; //modification time
+    char time[12]; //modification time
     //checksum
     char type; //file type
 };
@@ -42,6 +45,7 @@ void gid_to_octal(gid_t gid, char* octal_str);
 void write_gid(int archive_fd, gid_t gid, char* octal_str);
 void size_to_octal(size_t size, char* octal_str);
 void write_size(int archive_fd, size_t size, char* octal_str);
+void write_time(int archive_fd, time_t time, char* time_str);
 
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);

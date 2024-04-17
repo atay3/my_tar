@@ -35,34 +35,10 @@ void write_metadata(int archive_fd, const char* file_name) {
     write_gid(archive_fd, file_stat.st_gid, metadata.gid);
     write_size(archive_fd, file_stat.st_size, metadata.size);
 
-    metadata.time = file_stat.st_mtime;
+    // metadata.time = file_stat.st_mtime;
+    write_time(archive_fd, file_stat.st_mtim, metadata.time);
 
-    //PRINTING FILE TPYE, FLAGS, AND PERMISSIONS IN OCTAL
-    // mode_t file_type = file_stat.st_mode & S_IFMT;
-    // printf("file type: %o\n", file_type);
-    // mode_t flags = file_stat.st_mode & (S_ISUID | S_ISGID | S_ISVTX);
-    // printf("flags: %o\n", flags);
-    // printf("permissions: %o\n", file_stat.st_mode & 0777);
 
-    // if (write(archive_fd, &metadata.uid, sizeof(metadata.uid)) != sizeof(metadata.uid)) {
-    //     perror("write uid");
-    //     return;
-    // }
-
-    // if (write(archive_fd, &metadata.gid, sizeof(metadata.gid)) != sizeof(metadata.gid)) {
-    //     perror("write gid");
-    //     return;
-    // }
-
-    // if (write(archive_fd, &metadata.size, sizeof(metadata.size)) != sizeof(metadata.size)) {
-    //     perror("write size");
-    //     return;
-    // }
-
-    // if (write(archive_fd, &metadata.time, sizeof(metadata.time)) != sizeof(metadata.time)) {
-    //     perror("write time");
-    //     return;
-    // }
 }
 
 void write_file_content(int archive_fd, const char* file_name) {
@@ -195,4 +171,33 @@ void size_to_octal(size_t size, char* octal_str) {
 void write_size(int archive_fd, size_t size, char* octal_str) {
     size_to_octal(size, octal_str);
     write(archive_fd, octal_str, my_strlen(octal_str));
+}
+
+void write_time(int archive_fd, time_t time, char* time_str) {
+    // char* time_str = ctime(&time);
+    // if (time_str != NULL) {
+    //     write(archive_fd, time_str, my_strlen(time_str));
+    // }
+    // else {
+    //     printf("time str is null\n");
+    // }
+
+    //convert time to microsceconds
+    long long modification_time = (long long)(time.tv_sec) * MICROSECONDS_PER_SECOND + (long long)(time.tv_nsec) / 1000;
+
+    //convert time to string
+    int length = 0;
+    int max_length = 12;
+    while (modification_time > 0 && length < max_length - 1) {
+        time_str[length++] = '0' + modification_time % 10;
+    }
+    time_str[max_length - 1] = '\0';
+
+    for (int i = 0; i < length / 2; i++) {
+        char temp = time_str[i];
+        time_str[i] = time_str[length - i - 1];
+        time_str[length - i - 1] = temp;
+    }
+
+    write(archive_fd, time_str, length);
 }
