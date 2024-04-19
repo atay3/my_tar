@@ -45,7 +45,7 @@ void gid_to_octal(gid_t gid, char* octal_str);
 void write_gid(int archive_fd, gid_t gid, char* octal_str);
 void size_to_octal(size_t size, char* octal_str);
 void write_size(int archive_fd, size_t size, char* octal_str);
-void write_time(int archive_fd, time_t time, char* time_str);
+void write_time(int archive_fd, time_t sec, time_t nsec, char* time_str);
 
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);

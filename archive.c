@@ -35,8 +35,10 @@ void write_metadata(int archive_fd, const char* file_name) {
     write_gid(archive_fd, file_stat.st_gid, metadata.gid);
     write_size(archive_fd, file_stat.st_size, metadata.size);
 
+    printf("Modification time: %lld\n", (long long)file_stat.st_mtim.tv_sec);
+
     // metadata.time = file_stat.st_mtime;
-    write_time(archive_fd, file_stat.st_mtim, metadata.time);
+    write_time(archive_fd, file_stat.st_mtim.tv_sec, file_stat.st_mtim.tv_nsec, metadata.time);
 
 
 }
@@ -173,23 +175,17 @@ void write_size(int archive_fd, size_t size, char* octal_str) {
     write(archive_fd, octal_str, my_strlen(octal_str));
 }
 
-void write_time(int archive_fd, time_t time, char* time_str) {
-    // char* time_str = ctime(&time);
-    // if (time_str != NULL) {
-    //     write(archive_fd, time_str, my_strlen(time_str));
-    // }
-    // else {
-    //     printf("time str is null\n");
-    // }
-
+void write_time(int archive_fd, time_t sec, time_t nsec, char* time_str) {
     //convert time to microsceconds
-    long long modification_time = (long long)(time.tv_sec) * MICROSECONDS_PER_SECOND + (long long)(time.tv_nsec) / 1000;
+    long long modification_time = ((long long)sec * MICROSECONDS_PER_SECOND) + ((long long)nsec / 1000);
+    printf("Modification time: %lld\n", modification_time);
 
     //convert time to string
     int length = 0;
     int max_length = 12;
     while (modification_time > 0 && length < max_length - 1) {
         time_str[length++] = '0' + modification_time % 10;
+        modification_time /= 10;
     }
     time_str[max_length - 1] = '\0';
 
