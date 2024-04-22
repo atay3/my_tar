@@ -16,14 +16,14 @@
 #define MICROSECONDS_PER_SECOND 1000000
 
 struct FileMetadata {
-    char name[256];
-    char mode[8];
+    char name[256]; //file name
+    char mode[8]; //file permissions
     char uid[8]; //user id
     char gid[8]; //group id
     char size[12]; //file size
     char time[12]; //modification time
-    //checksum
-    char type; //file type
+    char checksum[7]; //checksum
+    char typeflag[2]; //file type
 };
 
 void print_message(char* message);
@@ -46,6 +46,8 @@ void write_gid(int archive_fd, gid_t gid, char* octal_str);
 void size_to_octal(size_t size, char* octal_str);
 void write_size(int archive_fd, size_t size, char* octal_str);
 void write_time(int archive_fd, time_t sec, time_t nsec, char* time_str);
+void write_checksum();
+void write_typeflag(int archive_fd, mode_t mode, char* ocatal_str);
 
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);

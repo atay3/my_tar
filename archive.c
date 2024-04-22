@@ -35,12 +35,12 @@ void write_metadata(int archive_fd, const char* file_name) {
     write_gid(archive_fd, file_stat.st_gid, metadata.gid);
     write_size(archive_fd, file_stat.st_size, metadata.size);
 
-    printf("Modification time: %lld\n", (long long)file_stat.st_mtim.tv_sec);
 
-    // metadata.time = file_stat.st_mtime;
+    printf("Modification time: %lld\n", (long long)file_stat.st_mtime); //1713508922
+
     write_time(archive_fd, file_stat.st_mtim.tv_sec, file_stat.st_mtim.tv_nsec, metadata.time);
 
-
+    write_typeflag(archive_fd, file_stat.st_mode, metadata.typeflag);
 }
 
 void write_file_content(int archive_fd, const char* file_name) {
@@ -77,7 +77,6 @@ void mode_to_octal(mode_t mode, char* str, int start_index) {
 }
 
 void write_mode(int archive_fd, mode_t mode, char* octal_str) {
-    // mode_t file_type = mode & S_IFMT; //extract file type bits
     // mode_t flags = mode & (S_ISUID | S_ISGID | S_ISVTX); //extract flags
     mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO); //extract file permissions
 
@@ -96,30 +95,18 @@ void write_mode(int archive_fd, mode_t mode, char* octal_str) {
 }
 
 void uid_to_octal(uid_t uid, char* octal_str) {
-    // int i = 1;
     int end_index = 7;
     octal_str[end_index--] = '\0'; //null terminate the string
-    // printf("end index: %d\n", end_index);
-    // printf("uid: %d, uid octal: %o\n", uid, uid);
 
     while (uid != 0) {
         uint8_t octal_digit = uid & 0b111;
         octal_str[end_index--] = '0' + octal_digit;
-        // printf("octal digit: %c\n", octal_str[end_index - i]);
         uid >>= 3;
-        // printf("i in current iteration (index is %d): %d\n", end_index - i, i);
-        // i++;
     }
 
-    // printf("i before padding: %d\n", i);
     while (end_index >= 0) {
-        // printf("padding index %d\n", end_index - i);
         octal_str[end_index--] = '0';
-        // i++;
-        // printf("octal digit: %c\n", octal_str[end_index - i]);
     }
-
-    // printf("uid in octal: %s\n", octal_str);
 }
 
 void write_uid(int archive_fd, uid_t uid, char* octal_str) {
@@ -133,7 +120,6 @@ void write_uid(int archive_fd, uid_t uid, char* octal_str) {
 }
 
 void gid_to_octal(gid_t gid, char* octal_str) {
-    // int i = 1;
     int end_index = 7;
     octal_str[end_index--] = '\0';
 
@@ -141,12 +127,10 @@ void gid_to_octal(gid_t gid, char* octal_str) {
         uint8_t octal_digit = gid & 0b111;
         octal_str[end_index--] = '0' + octal_digit;
         gid >>= 3;
-        // i++;
     }
 
     while (end_index >= 0) {
         octal_str[end_index--] = '0';
-        // i++;
     }
 }
 
@@ -196,4 +180,15 @@ void write_time(int archive_fd, time_t sec, time_t nsec, char* time_str) {
     }
 
     write(archive_fd, time_str, length);
+}
+
+void write_typeflag(int archive_fd, mode_t mode, char* ocatal_str) {
+    mode_t typeflag = mode & S_IFMT; //extract file type bits
+
+    ocatal_str[0] = '0' + typeflag;
+    ocatal_str[1] = '\0';
+
+    char whitespace = ' ';
+    write(archive_fd, &whitespace, 1);
+    write(archive_fd, ocatal_str, my_strlen(ocatal_str));
 }
