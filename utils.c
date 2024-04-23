@@ -19,18 +19,18 @@ int my_strlen(const char* str_1) {
     return length;
 }
 
-// char* my_strdup(const char* str_1) {
-//     int length = my_strlen(str_1);
-//     char* string = (char*) malloc((length + 1) * sizeof(char));
+char* my_strdup(const char* str_1) {
+    int length = my_strlen(str_1);
+    char* string = (char*) malloc((length + 1) * sizeof(char));
 
-//     for (int i = 0; i < length; i++) {
-//         string[i] = str_1[i];
-//     }
+    for (int i = 0; i < length; i++) {
+        string[i] = str_1[i];
+    }
 
-//     string[length] = '\0';
+    string[length] = '\0';
 
-//     return string;
-// }
+    return string;
+}
 
 char* my_strncpy(char* str_1, const char* str_2, int length) {
     int i;
@@ -55,4 +55,15 @@ int my_strcmp(const char* str_1, const char* str_2) {
         str_2++;
     }
     return 0;
+}
+
+char* my_strncpy2(char* str_1, const char* str_2, int start_index, int length) {
+    int i;
+    for (i = start_index; i < start_index + length && str_2[i] != '\0'; i++) {
+        str_1[i] = str_2[i];
+    }
+    
+    str_1[i] = '\0';
+
+    return str_1;
 }

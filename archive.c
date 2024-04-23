@@ -22,7 +22,7 @@ void write_metadata(int archive_fd, const char* file_name) {
         return;
     }
 
-    struct FileMetadata metadata;
+    FileMetadata metadata;
 
     my_strncpy(metadata.name, file_name, my_strlen(file_name));
     if (write(archive_fd, &metadata.name, my_strlen(metadata.name)) != my_strlen(metadata.name)) {
@@ -34,13 +34,39 @@ void write_metadata(int archive_fd, const char* file_name) {
     write_uid(archive_fd, file_stat.st_uid, metadata.uid);
     write_gid(archive_fd, file_stat.st_gid, metadata.gid);
     write_size(archive_fd, file_stat.st_size, metadata.size);
+    // printf("Modification time: %lld\n", (long long)file_stat.st_mtim.tv_sec);
 
-
-    printf("Modification time: %lld\n", (long long)file_stat.st_mtime); //1713508922
-
-    write_time(archive_fd, file_stat.st_mtim.tv_sec, file_stat.st_mtim.tv_nsec, metadata.time);
+    write_time(archive_fd, file_stat.st_mtim.tv_sec, metadata.time);
+    char** header;
+    calculate_checksum(metadata, header);
 
     write_typeflag(archive_fd, file_stat.st_mode, metadata.typeflag);
+}
+
+void populate_header(FileMetadata metadata, char** header) {
+    // my_strncpy2(header, metadata.name, 0, my_strlen(metadata.name));
+    // my_strncpy2(header, metadata.mode, my_strlen(metadata.name), 8);
+    // my_strncpy2(header, metadata.uid, my_strlen(metadata.name) + 8, 8);
+    // my_strncpy2(header, metadata.gid, my_strlen(metadata.name) + 16, 8);
+
+    /* malloc header; header[i] = my_strdup(metadata.name), etc*/
+
+}
+
+
+void calculate_checksum(FileMetadata metadata, char** header) {
+    populate_header(metadata, header);
+    printf("header: %s\n", header);
+    uint32_t sum = 0;
+    for (int i = 0; i < HEADER_SIZE; i++) {
+        if (i >= 148 && i < 155) {
+            header[i] = ' ';
+            continue;
+        }
+        sum += header[i];
+    }
+
+    printf("checksum = %d\n", sum);
 }
 
 void write_file_content(int archive_fd, const char* file_name) {
@@ -159,9 +185,9 @@ void write_size(int archive_fd, size_t size, char* octal_str) {
     write(archive_fd, octal_str, my_strlen(octal_str));
 }
 
-void write_time(int archive_fd, time_t sec, time_t nsec, char* time_str) {
+void write_time(int archive_fd, time_t sec, char* time_str) {
     //convert time to microsceconds
-    long long modification_time = ((long long)sec * MICROSECONDS_PER_SECOND) + ((long long)nsec / 1000);
+    long long modification_time = (long long)sec;
     printf("Modification time: %lld\n", modification_time);
 
     //convert time to string
