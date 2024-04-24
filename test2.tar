@@ -1,4 +1,4 @@
-my_tar.h000064400017500001750000000040441713853785 0#ifndef MY_TAR_H
+my_tar.h00006440001750000175000000004402146121241030006135 0#ifndef MY_TAR_H
 #define MY_TAR_H
 
 #include <stdlib.h> //utils.c
@@ -24,7 +24,7 @@ typedef struct {
     char time[12]; //modification time
     char checksum[7]; //checksum
     char typeflag[2]; //file type
-}FileMetadata;
+}file_header;
 
 void print_message(char* message);
 void print_error(char* message);
@@ -35,7 +35,7 @@ int my_strcmp(const char* str_1, const char* str_2);
 char* my_strncpy2(char* str_1, const char* str_2, int start_index, int length);
 
 void create_archive(int argc, char** argv);
-void write_metadata(int archive_fd, const char* file_name);
+void write_file_data(int archive_fd, const char* file_name);
 void write_file_content(int archive_fd, const char* file_name);
 void append_archive(int argc, char** argv);
 void mode_to_octal(mode_t mode, char* str, int start_index);
@@ -46,10 +46,13 @@ void gid_to_octal(gid_t gid, char* octal_str);
 void write_gid(int archive_fd, gid_t gid, char* octal_str);
 void size_to_octal(size_t size, char* octal_str);
 void write_size(int archive_fd, size_t size, char* octal_str);
-void write_time(int archive_fd, time_t sec, char* time_str);
-// void populate_header(FileMetadata metadata, char* header);
-void calculate_checksum(FileMetadata metadata, char* header);
-void write_checksum();
+void time_to_octal(time_t time, char* octal_str);
+void write_time(int archive_fd, time_t time, char* octal_str);
+void populate_header(file_header file_data, char** header_str);
+void calculate_checksum(file_header file_data, char** header_str, char* octal_str);
+void checksum_to_octal(int checksum, char* octal_str);
+void write_checksum(int archive_fd, file_header file_data, char* octal_str);
+void free_header(char** header_str);
 void write_typeflag(int archive_fd, mode_t mode, char* ocatal_str);
 
 void list_archive(char* archive_name);

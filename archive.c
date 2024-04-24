@@ -7,14 +7,14 @@ void create_archive(int argc, char** argv) {
     int archive_fd = open(archive_name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
     for (int i = 3; i < argc; i++) {
-        write_metadata(archive_fd, argv[i]);
+        write_file_data(archive_fd, argv[i]);
         write_file_content(archive_fd, argv[i]);
     }
 
     close(archive_fd);
 }
 
-void write_metadata(int archive_fd, const char* file_name) {
+void write_file_data(int archive_fd, const char* file_name) {
     struct stat file_stat;
 
     if (lstat(file_name, &file_stat) == -1) {
@@ -22,51 +22,88 @@ void write_metadata(int archive_fd, const char* file_name) {
         return;
     }
 
-    FileMetadata metadata;
+    file_header file_data;
 
-    my_strncpy(metadata.name, file_name, my_strlen(file_name));
-    if (write(archive_fd, &metadata.name, my_strlen(metadata.name)) != my_strlen(metadata.name)) {
+    my_strncpy(file_data.name, file_name, my_strlen(file_name));
+    if (write(archive_fd, &file_data.name, my_strlen(file_data.name)) != my_strlen(file_data.name)) {
         perror("write file name");
         return;
     }
 
-    write_mode(archive_fd, file_stat.st_mode, metadata.mode);
-    write_uid(archive_fd, file_stat.st_uid, metadata.uid);
-    write_gid(archive_fd, file_stat.st_gid, metadata.gid);
-    write_size(archive_fd, file_stat.st_size, metadata.size);
-    // printf("Modification time: %lld\n", (long long)file_stat.st_mtim.tv_sec);
+    write_mode(archive_fd, file_stat.st_mode, file_data.mode);
+    write_uid(archive_fd, file_stat.st_uid, file_data.uid);
+    write_gid(archive_fd, file_stat.st_gid, file_data.gid);
+    write_size(archive_fd, file_stat.st_size, file_data.size);
+    write_time(archive_fd, file_stat.st_mtim.tv_sec, file_data.time);
+    
+    write_checksum(archive_fd, file_data, file_data.checksum);
 
-    write_time(archive_fd, file_stat.st_mtim.tv_sec, metadata.time);
-    char** header;
-    calculate_checksum(metadata, header);
-
-    write_typeflag(archive_fd, file_stat.st_mode, metadata.typeflag);
+    write_typeflag(archive_fd, file_stat.st_mode, file_data.typeflag);
 }
 
-void populate_header(FileMetadata metadata, char** header) {
-    // my_strncpy2(header, metadata.name, 0, my_strlen(metadata.name));
-    // my_strncpy2(header, metadata.mode, my_strlen(metadata.name), 8);
-    // my_strncpy2(header, metadata.uid, my_strlen(metadata.name) + 8, 8);
-    // my_strncpy2(header, metadata.gid, my_strlen(metadata.name) + 16, 8);
-
-    /* malloc header; header[i] = my_strdup(metadata.name), etc*/
-
+void populate_header(file_header file_data, char** header_str) {
+    header_str[0] = my_strdup(file_data.name);
+    header_str[1] = my_strdup(file_data.mode);
+    header_str[2] = my_strdup(file_data.uid);
+    header_str[3] = my_strdup(file_data.gid);
+    header_str[4] = my_strdup(file_data.size);
+    header_str[5] = my_strdup(file_data.time);
+    header_str[6] = my_strdup(file_data.checksum);
+    for (int i = 0; i < 7; i++) {
+        header_str[6][i] = ' ';
+    }
+    // header_str[7] = my_strdup(file_data.typeflag);
 }
 
+void calculate_checksum(file_header file_data, char** header_str, char* octal_str) {
+    populate_header(file_data, header_str);
 
-void calculate_checksum(FileMetadata metadata, char** header) {
-    populate_header(metadata, header);
-    printf("header: %s\n", header);
     uint32_t sum = 0;
-    for (int i = 0; i < HEADER_SIZE; i++) {
-        if (i >= 148 && i < 155) {
-            header[i] = ' ';
-            continue;
+    int length = 7; //might need to change
+    for (int i = 0; i < length; i++) {
+        printf("header: %s\n", header_str[i]);
+        for (int j = 0; j < my_strlen(header_str[i]); j++) {
+            sum += header_str[i][j];
         }
-        sum += header[i];
     }
 
+    checksum_to_octal(sum, octal_str);
     printf("checksum = %d\n", sum);
+}
+
+void checksum_to_octal(int checksum, char* octal_str) {
+    int end_index = 7;
+    octal_str[end_index--] = '\0';
+
+    while (checksum != 0) {
+        uint8_t octal_digit = checksum & 0b111;
+        octal_str[end_index--] = '0' + octal_digit;
+        checksum >>= 3;
+    }
+
+    while (end_index >= 0) {
+        octal_str[end_index--] = '0';
+    }
+
+    printf("chksum: %s\n", octal_str);
+}
+
+void write_checksum(int archive_fd, file_header file_data, char* octal_str) {
+    char** header_str = (char**) malloc(8 * sizeof(char*));
+    calculate_checksum(file_data, header_str, octal_str);
+    write(archive_fd, octal_str, my_strlen(octal_str));
+
+    free_header(header_str);
+}
+
+void free_header(char** header_str) {
+    int length = 8;
+    for (int i = 0; i < length; i++) {
+        if (header_str[i] != NULL) {
+            free(header_str[i]);
+        }
+    }
+    free(header_str);
 }
 
 void write_file_content(int archive_fd, const char* file_name) {
@@ -185,27 +222,24 @@ void write_size(int archive_fd, size_t size, char* octal_str) {
     write(archive_fd, octal_str, my_strlen(octal_str));
 }
 
-void write_time(int archive_fd, time_t sec, char* time_str) {
-    //convert time to microsceconds
-    long long modification_time = (long long)sec;
-    printf("Modification time: %lld\n", modification_time);
+void time_to_octal(time_t time, char* octal_str) {
+    int end_index = 11;
+    octal_str[end_index--] = '\0';
 
-    //convert time to string
-    int length = 0;
-    int max_length = 12;
-    while (modification_time > 0 && length < max_length - 1) {
-        time_str[length++] = '0' + modification_time % 10;
-        modification_time /= 10;
-    }
-    time_str[max_length - 1] = '\0';
-
-    for (int i = 0; i < length / 2; i++) {
-        char temp = time_str[i];
-        time_str[i] = time_str[length - i - 1];
-        time_str[length - i - 1] = temp;
+    while (time != 0) {
+        uint8_t octal_digit = time & 0b111;
+        octal_str[end_index--] = '0' + octal_digit;
+        time >>= 3;
     }
 
-    write(archive_fd, time_str, length);
+    while (end_index >= 0) {
+        octal_str[end_index--] = '0';
+    }
+}
+
+void write_time(int archive_fd, time_t time, char* octal_str) {
+    time_to_octal(time, octal_str);
+    write(archive_fd, octal_str, my_strlen(octal_str));
 }
 
 void write_typeflag(int archive_fd, mode_t mode, char* ocatal_str) {
