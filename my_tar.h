@@ -22,8 +22,9 @@ typedef struct {
     char gid[8]; //group id
     char size[12]; //file size
     char time[12]; //modification time
-    char checksum[7]; //checksum
-    char typeflag[2]; //file type
+    char checksum_str[7]; //checksum
+    unsigned int* checksum_num;
+    char typeflag[3]; //file type
 }file_header;
 
 void print_message(char* message);
@@ -39,7 +40,7 @@ void write_file_data(int archive_fd, const char* file_name);
 void write_file_content(int archive_fd, const char* file_name);
 void append_archive(int argc, char** argv);
 void mode_to_octal(mode_t mode, char* str, int start_index);
-void write_mode(int archive_fd, mode_t mode, char* octal_str);
+void write_mode(int archive_fd, mode_t mode, char* octal_str, unsigned int* checksum_num);
 void uid_to_octal(uid_t uid, char* octal_str);
 void write_uid(int archive_fd, uid_t uid, char* octal_str);
 void gid_to_octal(gid_t gid, char* octal_str);
@@ -49,11 +50,13 @@ void write_size(int archive_fd, size_t size, char* octal_str);
 void time_to_octal(time_t time, char* octal_str);
 void write_time(int archive_fd, time_t time, char* octal_str);
 void populate_header(file_header file_data, char** header_str);
+// void populate_header(char** file_data, char** header_str);
+void checksum(unsigned int* sum, char* field);
 void calculate_checksum(file_header file_data, char** header_str, char* octal_str);
 void checksum_to_octal(int checksum, char* octal_str);
 void write_checksum(int archive_fd, file_header file_data, char* octal_str);
 void free_header(char** header_str);
-void write_typeflag(int archive_fd, mode_t mode, char* ocatal_str);
+void write_typeflag(int archive_fd, mode_t mode, char* octal_str);
 
 void list_archive(char* archive_name);
 void update_archive(int argc, char** argv);

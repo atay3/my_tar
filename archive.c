@@ -23,56 +23,67 @@ void write_file_data(int archive_fd, const char* file_name) {
     }
 
     file_header file_data;
+    file_data.checksum_num = 0;
 
     my_strncpy(file_data.name, file_name, my_strlen(file_name));
+    checksum(file_data.checksum_num, file_data.name);
     if (write(archive_fd, &file_data.name, my_strlen(file_data.name)) != my_strlen(file_data.name)) {
         perror("write file name");
         return;
     }
 
-    write_mode(archive_fd, file_stat.st_mode, file_data.mode);
+    write_mode(archive_fd, file_stat.st_mode, file_data.mode, file_data.checksum_num);
     write_uid(archive_fd, file_stat.st_uid, file_data.uid);
     write_gid(archive_fd, file_stat.st_gid, file_data.gid);
     write_size(archive_fd, file_stat.st_size, file_data.size);
     write_time(archive_fd, file_stat.st_mtim.tv_sec, file_data.time);
     
-    write_checksum(archive_fd, file_data, file_data.checksum);
+    // write_checksum(archive_fd, file_data, file_data.checksum_str);
 
     write_typeflag(archive_fd, file_stat.st_mode, file_data.typeflag);
 }
 
-void populate_header(file_header file_data, char** header_str) {
-    header_str[0] = my_strdup(file_data.name);
-    header_str[1] = my_strdup(file_data.mode);
-    header_str[2] = my_strdup(file_data.uid);
-    header_str[3] = my_strdup(file_data.gid);
-    header_str[4] = my_strdup(file_data.size);
-    header_str[5] = my_strdup(file_data.time);
-    header_str[6] = my_strdup(file_data.checksum);
-    for (int i = 0; i < 7; i++) {
-        header_str[6][i] = ' ';
-    }
-    // header_str[7] = my_strdup(file_data.typeflag);
-}
+// void populate_header(file_header file_data, char** header_str) {
+//     header_str[0] = my_strdup(file_data.name);
+//     header_str[1] = my_strdup(file_data.mode);
+//     header_str[2] = my_strdup(file_data.uid);
+//     header_str[3] = my_strdup(file_data.gid);
+//     header_str[4] = my_strdup(file_data.size);
+//     header_str[5] = my_strdup(file_data.time);
+//     header_str[6] = my_strdup(file_data.checksum);
+//     for (int i = 0; i < 7; i++) {
+//         header_str[6][i] = ' ';
+//     }
+//     header_str[7] = my_strdup(file_data.typeflag);
+// }
 
-void calculate_checksum(file_header file_data, char** header_str, char* octal_str) {
-    populate_header(file_data, header_str);
-
-    uint32_t sum = 0;
-    int length = 7; //might need to change
+void checksum(unsigned int* sum, char* field) {
+    int length = my_strlen(field); //might need to change
     for (int i = 0; i < length; i++) {
-        printf("header: %s\n", header_str[i]);
-        for (int j = 0; j < my_strlen(header_str[i]); j++) {
-            sum += header_str[i][j];
-        }
+        sum += field[i];
     }
 
-    checksum_to_octal(sum, octal_str);
-    printf("checksum = %d\n", sum);
+    printf("checksum = %u\n", *sum);
 }
+
+// void calculate_checksum(file_header file_data, char** header_str, char* octal_str) {
+//     populate_header(file_data, header_str);
+
+//     uint32_t sum = 0;
+//     int length = 7; //might need to change
+//     for (int i = 0; i < length; i++) {
+//         printf("header: %s\n", header_str[i]);
+//         for (int j = 0; j < my_strlen(header_str[i]); j++) {
+//             sum += header_str[i][j];
+//         }
+//     }
+
+//     checksum_to_octal(sum, octal_str);
+//     printf("checksum = %d\n", sum);
+// }
 
 void checksum_to_octal(int checksum, char* octal_str) {
-    int end_index = 7;
+    int end_index = 7;//change
     octal_str[end_index--] = '\0';
 
     while (checksum != 0) {
@@ -88,23 +99,23 @@ void checksum_to_octal(int checksum, char* octal_str) {
     printf("chksum: %s\n", octal_str);
 }
 
-void write_checksum(int archive_fd, file_header file_data, char* octal_str) {
-    char** header_str = (char**) malloc(8 * sizeof(char*));
-    calculate_checksum(file_data, header_str, octal_str);
-    write(archive_fd, octal_str, my_strlen(octal_str));
+// void write_checksum(int archive_fd, file_header file_data, char* octal_str) {
+//     char** header_str = (char**) malloc(8 * sizeof(char*));
+//     calculate_checksum(file_data, header_str, octal_str);
+//     write(archive_fd, octal_str, my_strlen(octal_str));
 
-    free_header(header_str);
-}
+//     free_header(header_str);
+// }
 
-void free_header(char** header_str) {
-    int length = 8;
-    for (int i = 0; i < length; i++) {
-        if (header_str[i] != NULL) {
-            free(header_str[i]);
-        }
-    }
-    free(header_str);
-}
+// void free_header(char** header_str) {
+//     int length = 8;
+//     for (int i = 0; i < length; i++) {
+//         if (header_str[i] != NULL) {
+//             free(header_str[i]);
+//         }
+//     }
+//     free(header_str);
+// }
 
 void write_file_content(int archive_fd, const char* file_name) {
     int file_fd = open(file_name, O_RDONLY);
@@ -139,8 +150,7 @@ void mode_to_octal(mode_t mode, char* str, int start_index) {
     }
 }
 
-void write_mode(int archive_fd, mode_t mode, char* octal_str) {
-    // mode_t flags = mode & (S_ISUID | S_ISGID | S_ISVTX); //extract flags
+void write_mode(int archive_fd, mode_t mode, char* octal_str, unsigned int* checksum_num) {
     mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO); //extract file permissions
 
     int padding = 5;
@@ -148,11 +158,7 @@ void write_mode(int archive_fd, mode_t mode, char* octal_str) {
         octal_str[i] = '0';
     }
     mode_to_octal(permissions, octal_str, padding - 1);
-
-    // char file_type_octal = '0' + ((file_type >> 12) & 0x7);
-    // octal_str[0] = file_type_octal;
-    // mode_to_octal(flags, octal_str, 1);
-    // mode_to_octal(permissions, octal_str, 4);
+    checksum(checksum_num, octal_str);
 
     write(archive_fd, octal_str, my_strlen(octal_str));
 }
@@ -242,13 +248,12 @@ void write_time(int archive_fd, time_t time, char* octal_str) {
     write(archive_fd, octal_str, my_strlen(octal_str));
 }
 
-void write_typeflag(int archive_fd, mode_t mode, char* ocatal_str) {
+void write_typeflag(int archive_fd, mode_t mode, char* octal_str) {
     mode_t typeflag = mode & S_IFMT; //extract file type bits
 
-    ocatal_str[0] = '0' + typeflag;
-    ocatal_str[1] = '\0';
+    octal_str[0] = ' ';
+    octal_str[1] = '0' + typeflag;
+    octal_str[2] = '\0';
 
-    char whitespace = ' ';
-    write(archive_fd, &whitespace, 1);
-    write(archive_fd, ocatal_str, my_strlen(ocatal_str));
+    write(archive_fd, octal_str, my_strlen(octal_str));
 }
