@@ -1,4 +1,4 @@
-#include "my_tar.h"
+#include "utils.h"
 
 void print_message(char* message) {
     write(1, message, my_strlen(message));
@@ -55,15 +55,4 @@ int my_strcmp(const char* str_1, const char* str_2) {
         str_2++;
     }
     return 0;
-}
-
-char* my_strncpy2(char* str_1, const char* str_2, int start_index, int length) {
-    int i;
-    for (i = start_index; i < start_index + length && str_2[i] != '\0'; i++) {
-        str_1[i] = str_2[i];
-    }
-    
-    str_1[i] = '\0';
-
-    return str_1;
 }

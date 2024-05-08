@@ -1,4 +1,6 @@
-#include "my_tar.h"
+#include "main.h"
+#include "archive.h"
+#include "utils.h"
 
 void create_archive(int argc, char** argv) {
     char* archive_name = argv[2];
@@ -25,15 +27,14 @@ void write_file_data(int archive_fd, const char* file_name) {
     file_header file_data;
     file_data.checksum_num = 0;
 
-    my_strncpy(file_data.name, file_name, my_strlen(file_name));
-    checksum(file_data.checksum_num, file_data.name);
-    if (write(archive_fd, &file_data.name, my_strlen(file_data.name)) != my_strlen(file_data.name)) {
-        perror("write file name");
-        return;
-    }
+    get_name(file_name, file_data.name, &file_data.checksum_num);
+    get_mode(file_stat.st_mode, file_data.mode, &file_data.checksum_num);
+    get_uid(file_stat.st_uid, file_data.uid, &file_data.checksum_num);
 
-    write_mode(archive_fd, file_stat.st_mode, file_data.mode, file_data.checksum_num);
-    write_uid(archive_fd, file_stat.st_uid, file_data.uid);
+    write_stats(archive_fd, file_data);
+
+    // write_mode(archive_fd, file_stat.st_mode, file_data.mode, &file_data.checksum_num);
+    // write_uid(archive_fd, file_stat.st_uid, file_data.uid);
     write_gid(archive_fd, file_stat.st_gid, file_data.gid);
     write_size(archive_fd, file_stat.st_size, file_data.size);
     write_time(archive_fd, file_stat.st_mtim.tv_sec, file_data.time);
@@ -43,44 +44,59 @@ void write_file_data(int archive_fd, const char* file_name) {
     write_typeflag(archive_fd, file_stat.st_mode, file_data.typeflag);
 }
 
-// void populate_header(file_header file_data, char** header_str) {
-//     header_str[0] = my_strdup(file_data.name);
-//     header_str[1] = my_strdup(file_data.mode);
-//     header_str[2] = my_strdup(file_data.uid);
-//     header_str[3] = my_strdup(file_data.gid);
-//     header_str[4] = my_strdup(file_data.size);
-//     header_str[5] = my_strdup(file_data.time);
-//     header_str[6] = my_strdup(file_data.checksum);
-//     for (int i = 0; i < 7; i++) {
-//         header_str[6][i] = ' ';
-//     }
-//     header_str[7] = my_strdup(file_data.typeflag);
-// }
+void write_file_content(int archive_fd, const char* file_name) {
+    int file_fd = open(file_name, O_RDONLY);
+
+    if (file_fd == -1) {
+        printf("Error opening file\n"); //remove later
+        return;
+    }
+
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(file_fd, buffer, BUFFER_SIZE)) > 0) {
+        if (write(archive_fd, buffer, bytes_read) != bytes_read) {
+            printf("Error writing file contents\n"); //remove later
+            return;
+        }
+    }
+
+    close(file_fd);
+}
+
+void write_stats(int archive_fd, file_header file_data) {
+    write(archive_fd, file_data.name, my_strlen(file_data.name));
+    write(archive_fd, file_data.mode, my_strlen(file_data.mode));
+    write(archive_fd, file_data.uid, my_strlen(file_data.uid));
+}
+
+void get_name(const char* file_name, char* name, unsigned int* sum) {
+    my_strncpy(name, file_name, my_strlen(file_name));
+    checksum(sum, name);
+}
+
+void get_mode(mode_t mode, char* octal_str, unsigned int* sum) {
+    mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO); //extract file permissions
+
+    int padding = 5;
+    for (int i = 0; i < padding - 1; i++) {
+        octal_str[i] = '0';
+    }
+    mode_to_octal(permissions, octal_str, padding - 1);
+    checksum(sum, octal_str);
+}
 
 void checksum(unsigned int* sum, char* field) {
-    int length = my_strlen(field); //might need to change
-    for (int i = 0; i < length; i++) {
-        sum += field[i];
+    printf("field: %s, length: %d ", field, my_strlen(field));
+
+    while (*field) {
+        *sum += *field;
+        field++;
     }
 
     printf("checksum = %u\n", *sum);
 }
-
-// void calculate_checksum(file_header file_data, char** header_str, char* octal_str) {
-//     populate_header(file_data, header_str);
-
-//     uint32_t sum = 0;
-//     int length = 7; //might need to change
-//     for (int i = 0; i < length; i++) {
-//         printf("header: %s\n", header_str[i]);
-//         for (int j = 0; j < my_strlen(header_str[i]); j++) {
-//             sum += header_str[i][j];
-//         }
-//     }
-
-//     checksum_to_octal(sum, octal_str);
-//     printf("checksum = %d\n", sum);
-// }
 
 void checksum_to_octal(int checksum, char* octal_str) {
     int end_index = 7;//change
@@ -117,27 +133,6 @@ void checksum_to_octal(int checksum, char* octal_str) {
 //     free(header_str);
 // }
 
-void write_file_content(int archive_fd, const char* file_name) {
-    int file_fd = open(file_name, O_RDONLY);
-
-    if (file_fd == -1) {
-        printf("Error opening file\n"); //remove later
-        return;
-    }
-
-    char buffer[BUFFER_SIZE];
-    ssize_t bytes_read;
-
-    while ((bytes_read = read(file_fd, buffer, BUFFER_SIZE)) > 0) {
-        if (write(archive_fd, buffer, bytes_read) != bytes_read) {
-            printf("Error writing file contents\n"); //remove later
-            return;
-        }
-    }
-
-    close(file_fd);
-}
-
 void mode_to_octal(mode_t mode, char* str, int start_index) {
     //convert the bits to octal representation manually
     str[start_index] = '0' + ((mode >> 6) & 0b111);
@@ -150,17 +145,22 @@ void mode_to_octal(mode_t mode, char* str, int start_index) {
     }
 }
 
-void write_mode(int archive_fd, mode_t mode, char* octal_str, unsigned int* checksum_num) {
-    mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO); //extract file permissions
+// void write_mode(int archive_fd, mode_t mode, char* octal_str) {
+//     mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO); //extract file permissions
 
-    int padding = 5;
-    for (int i = 0; i < padding - 1; i++) {
-        octal_str[i] = '0';
-    }
-    mode_to_octal(permissions, octal_str, padding - 1);
-    checksum(checksum_num, octal_str);
+//     int padding = 5;
+//     for (int i = 0; i < padding - 1; i++) {
+//         octal_str[i] = '0';
+//     }
+//     mode_to_octal(permissions, octal_str, padding - 1);
+//     checksum(sum, octal_str);
 
-    write(archive_fd, octal_str, my_strlen(octal_str));
+//     write(archive_fd, octal_str, my_strlen(octal_str));
+// }
+
+void get_uid(uid_t uid, char* octal_str, unsigned int* sum) {
+    uid_to_octal(uid, octal_str);
+    checksum(sum, octal_str);
 }
 
 void uid_to_octal(uid_t uid, char* octal_str) {
@@ -178,15 +178,14 @@ void uid_to_octal(uid_t uid, char* octal_str) {
     }
 }
 
-void write_uid(int archive_fd, uid_t uid, char* octal_str) {
-    uid_to_octal(uid, octal_str);
-    // write(archive_fd, octal_str, my_strlen(octal_str));
+// void write_uid(int archive_fd, uid_t uid, char* octal_str) {
+//     uid_to_octal(uid, octal_str);
 
-    if (write(archive_fd, octal_str, my_strlen(octal_str)) == -1) {
-        printf("error writing uid\n");
-        return;
-    }
-}
+//     if (write(archive_fd, octal_str, my_strlen(octal_str)) == -1) {
+//         printf("error writing uid\n");
+//         return;
+//     }
+// }
 
 void gid_to_octal(gid_t gid, char* octal_str) {
     int end_index = 7;

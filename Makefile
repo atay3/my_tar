@@ -1,13 +1,13 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -Werror
-DEPS = my_tar.h
+DEPS = main.h archive.h
 TARGET = my_tar
 OBJ = main.o utils.o archive.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-my_tar: $(OBJ)
+$(TARGET): $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 clean:
