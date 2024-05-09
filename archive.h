@@ -8,6 +8,7 @@
 
 #define BUFFER_SIZE 1024
 #define HEADER_SIZE 512
+#define USTAR "ustar\0"
 
 typedef struct {
     char name[256]; //file name
@@ -32,16 +33,19 @@ void mode_to_octal(mode_t mode, char* str, int start_index);
 void get_uid(uid_t uid, char* octal_str, unsigned int* sum);
 void uid_to_octal(uid_t uid, char* octal_str);
 // void write_uid(int archive_fd, uid_t uid, char* octal_str);
+void get_gid(gid_t gid, char* octal_str, unsigned int* sum);
 void gid_to_octal(gid_t gid, char* octal_str);
-void write_gid(int archive_fd, gid_t gid, char* octal_str);
+// void write_gid(int archive_fd, gid_t gid, char* octal_str);
+void get_size(size_t size, char* octal_str, unsigned int* sum);
 void size_to_octal(size_t size, char* octal_str);
-void write_size(int archive_fd, size_t size, char* octal_str);
+// void write_size(int archive_fd, size_t size, char* octal_str);
+void get_time(time_t time, char* octal_str, unsigned int* sum);
 void time_to_octal(time_t time, char* octal_str);
-void write_time(int archive_fd, time_t time, char* octal_str);
+// void write_time(int archive_fd, time_t time, char* octal_str);
 void checksum(unsigned int* sum, char* field);
 void checksum_to_octal(int checksum, char* octal_str);
-void write_checksum(int archive_fd, file_header file_data, char* octal_str);
-void free_header(char** header_str);
-void write_typeflag(int archive_fd, mode_t mode, char* octal_str);
+void write_checksum(int archive_fd, unsigned int sum, char* octal_str);
+void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum);
+// void write_typeflag(int archive_fd, mode_t mode, char* octal_str);
 
 #endif
