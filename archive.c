@@ -34,6 +34,7 @@ void write_file_data(int archive_fd, const char* file_name) {
     get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
+    checksum(&file_data.checksum_num, USTAR);
 
     write_stats(archive_fd, file_data);
 
@@ -78,7 +79,7 @@ void write_stats(int archive_fd, file_header file_data) {
     write(archive_fd, file_data.time, my_strlen(file_data.time));
     write_checksum(archive_fd, file_data.checksum_num, file_data.checksum_str);
     write(archive_fd, file_data.typeflag, my_strlen(file_data.typeflag));
-
+    write(archive_fd, USTAR, my_strlen(USTAR));
 }
 
 void get_name(const char* file_name, char* name, unsigned int* sum) {
