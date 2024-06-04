@@ -30,11 +30,13 @@ void write_file_data(int archive_fd, const char* file_name) {
     get_name(file_name, file_data.name, &file_data.checksum_num);
     get_mode(file_stat.st_mode, file_data.mode, &file_data.checksum_num);
     get_uid(file_stat.st_uid, file_data.uid, &file_data.checksum_num);
-    get_uid(file_stat.st_gid, file_data.gid, &file_data.checksum_num);
+    get_gid(file_stat.st_gid, file_data.gid, &file_data.checksum_num);
     get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
     checksum(&file_data.checksum_num, USTAR);
+    get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
+    // get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
 
     write_stats(archive_fd, file_data);
 
@@ -80,6 +82,9 @@ void write_stats(int archive_fd, file_header file_data) {
     write_checksum(archive_fd, file_data.checksum_num, file_data.checksum_str);
     write(archive_fd, file_data.typeflag, my_strlen(file_data.typeflag));
     write(archive_fd, USTAR, my_strlen(USTAR));
+    write(archive_fd, "  ", 2);
+    write(archive_fd, file_data.user, my_strlen(file_data.user));
+    write(archive_fd, file_data.group, my_strlen(file_data.group));
 }
 
 void get_name(const char* file_name, char* name, unsigned int* sum) {
@@ -280,3 +285,26 @@ void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
 
 //     write(archive_fd, octal_str, my_strlen(octal_str));
 // }
+
+void get_user_name(uid_t uid, char* str, unsigned int* sum) {
+    struct passwd* pw;
+    pw = getpwuid(uid);
+    // int length = my_strlen(pw->pw_name);
+    my_strncpy(pw->pw_name, str, my_strlen(str));
+    // for (int i = 0; i < length; i++) {
+    //     str[i] = pw->pw_name[i];
+    // }
+    // str[length - 1] = '\0';
+    checksum(sum, str);
+}
+
+void get_group_name(gid_t gid, char* str, unsigned int* sum) {
+    struct group* gr;
+    gr = getgrgid(gid);
+    int length = my_strlen(gr->gr_name);
+    for (int i = 0; i < length; i++) {
+        str[i] = gr->gr_name[i];
+    }
+    str[length - 1] = '\0';
+    checksum(sum, str);
+}

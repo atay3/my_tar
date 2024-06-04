@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <stdint.h>
 #include <time.h>
+#include <pwd.h>
+#include <grp.h>
 
 #define BUFFER_SIZE 1024
 #define HEADER_SIZE 512
@@ -20,6 +22,8 @@ typedef struct {
     char checksum_str[7]; //checksum
     unsigned int checksum_num;
     char typeflag[3]; //file type
+    char user[32];
+    char group[32];
 }file_header;
 
 void write_file_data(int archive_fd, const char* file_name);
@@ -47,5 +51,7 @@ void checksum_to_octal(int checksum, char* octal_str);
 void write_checksum(int archive_fd, unsigned int sum, char* octal_str);
 void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum);
 // void write_typeflag(int archive_fd, mode_t mode, char* octal_str);
+void get_user_name(uid_t uid, char* str, unsigned int* sum);
+void get_group_name(gid_t gid, char* str, unsigned int* sum);
 
 #endif
