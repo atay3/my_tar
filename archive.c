@@ -35,20 +35,12 @@ void write_file_data(int archive_fd, const char* file_name) {
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
     checksum(&file_data.checksum_num, USTAR);
+    checksum(&file_data.checksum_num, "  \0");
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
-    // get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
+    get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
+    // checksum(&file_data.checksum_num, file_data.checksum_str);
 
     write_stats(archive_fd, file_data);
-
-    // write_mode(archive_fd, file_stat.st_mode, file_data.mode, &file_data.checksum_num);
-    // write_uid(archive_fd, file_stat.st_uid, file_data.uid);
-    // write_gid(archive_fd, file_stat.st_gid, file_data.gid);
-    // write_size(archive_fd, file_stat.st_size, file_data.size);
-    // write_time(archive_fd, file_stat.st_mtim.tv_sec, file_data.time);
-    
-    // write_checksum(archive_fd, file_data, file_data.checksum_str);
-
-    // write_typeflag(archive_fd, file_stat.st_mode, file_data.typeflag);
 }
 
 void write_file_content(int archive_fd, const char* file_name) {
@@ -115,8 +107,9 @@ void checksum(unsigned int* sum, char* field) {
 }
 
 void checksum_to_octal(int checksum, char* octal_str) {
-    int end_index = 6;//change to 9 or 10?
+    int end_index = 7;
     octal_str[end_index--] = '\0';
+    octal_str[end_index--] = ' ';
 
     while (checksum != 0) {
         uint8_t octal_digit = checksum & 0b111;
@@ -132,6 +125,7 @@ void checksum_to_octal(int checksum, char* octal_str) {
 }
 
 void write_checksum(int archive_fd, unsigned int sum, char* octal_str) {
+    checksum(&sum, "        \0");
     checksum_to_octal((int)sum, octal_str);
     write(archive_fd, octal_str, my_strlen(octal_str));
 }
@@ -147,19 +141,6 @@ void mode_to_octal(mode_t mode, char* str, int start_index) {
         str[start_index + 3] = '\0';
     }
 }
-
-// void write_mode(int archive_fd, mode_t mode, char* octal_str) {
-//     mode_t permissions = mode & (S_IRWXU | S_IRWXG | S_IRWXO); //extract file permissions
-
-//     int padding = 5;
-//     for (int i = 0; i < padding - 1; i++) {
-//         octal_str[i] = '0';
-//     }
-//     mode_to_octal(permissions, octal_str, padding - 1);
-//     checksum(sum, octal_str);
-
-//     write(archive_fd, octal_str, my_strlen(octal_str));
-// }
 
 void get_uid(uid_t uid, char* octal_str, unsigned int* sum) {
     uid_to_octal(uid, octal_str);
@@ -181,15 +162,6 @@ void uid_to_octal(uid_t uid, char* octal_str) {
     }
 }
 
-// void write_uid(int archive_fd, uid_t uid, char* octal_str) {
-//     uid_to_octal(uid, octal_str);
-
-//     if (write(archive_fd, octal_str, my_strlen(octal_str)) == -1) {
-//         printf("error writing uid\n");
-//         return;
-//     }
-// }
-
 void get_gid(gid_t gid, char* octal_str, unsigned int* sum) {
     gid_to_octal(gid, octal_str);
     checksum(sum, octal_str);
@@ -209,11 +181,6 @@ void gid_to_octal(gid_t gid, char* octal_str) {
         octal_str[end_index--] = '0';
     }
 }
-
-// void write_gid(int archive_fd, gid_t gid, char* octal_str) {
-//     gid_to_octal(gid, octal_str);
-//     write(archive_fd, octal_str, my_strlen(octal_str));
-// }
 
 void get_size(size_t size, char* octal_str, unsigned int* sum) {
     size_to_octal(size, octal_str);
@@ -236,11 +203,6 @@ void size_to_octal(size_t size, char* octal_str) {
     }
 }
 
-// void write_size(int archive_fd, size_t size, char* octal_str) {
-//     size_to_octal(size, octal_str);
-//     write(archive_fd, octal_str, my_strlen(octal_str));
-// }
-
 void time_to_octal(time_t time, char* octal_str) {
     int end_index = 11;
     octal_str[end_index--] = '\0';
@@ -261,50 +223,25 @@ void get_time(time_t time, char* octal_str, unsigned int* sum) {
     checksum(sum, octal_str);
 }
 
-// void write_time(int archive_fd, time_t time, char* octal_str) {
-//     time_to_octal(time, octal_str);
-//     write(archive_fd, octal_str, my_strlen(octal_str));
-// }
-
 void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
     mode_t typeflag = mode & S_IFMT; //extract file type bits
 
-    octal_str[0] = ' ';
-    octal_str[1] = '0' + typeflag;
-    octal_str[2] = '\0';
+    octal_str[0] = '0' + typeflag;
+    octal_str[1] = '\0';
 
     checksum(sum, octal_str);
 }
 
-// void write_typeflag(int archive_fd, mode_t mode, char* octal_str) {
-//     mode_t typeflag = mode & S_IFMT; //extract file type bits
-
-//     octal_str[0] = ' ';
-//     octal_str[1] = '0' + typeflag;
-//     octal_str[2] = '\0';
-
-//     write(archive_fd, octal_str, my_strlen(octal_str));
-// }
-
 void get_user_name(uid_t uid, char* str, unsigned int* sum) {
     struct passwd* pw;
     pw = getpwuid(uid);
-    // int length = my_strlen(pw->pw_name);
-    my_strncpy(pw->pw_name, str, my_strlen(str));
-    // for (int i = 0; i < length; i++) {
-    //     str[i] = pw->pw_name[i];
-    // }
-    // str[length - 1] = '\0';
+    my_strncpy(str, pw->pw_name, my_strlen(pw->pw_name));
     checksum(sum, str);
 }
 
 void get_group_name(gid_t gid, char* str, unsigned int* sum) {
     struct group* gr;
     gr = getgrgid(gid);
-    int length = my_strlen(gr->gr_name);
-    for (int i = 0; i < length; i++) {
-        str[i] = gr->gr_name[i];
-    }
-    str[length - 1] = '\0';
+    my_strncpy(str, gr->gr_name, my_strlen(gr->gr_name));
     checksum(sum, str);
 }
