@@ -35,10 +35,8 @@ void write_file_data(int archive_fd, const char* file_name) {
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
     checksum(&file_data.checksum_num, USTAR);
-    checksum(&file_data.checksum_num, "  \0");
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
     get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
-    // checksum(&file_data.checksum_num, file_data.checksum_str);
 
     write_stats(archive_fd, file_data);
 }
@@ -74,7 +72,6 @@ void write_stats(int archive_fd, file_header file_data) {
     write_checksum(archive_fd, file_data.checksum_num, file_data.checksum_str);
     write(archive_fd, file_data.typeflag, my_strlen(file_data.typeflag));
     write(archive_fd, USTAR, my_strlen(USTAR));
-    write(archive_fd, "  ", 2);
     write(archive_fd, file_data.user, my_strlen(file_data.user));
     write(archive_fd, file_data.group, my_strlen(file_data.group));
 }
@@ -133,7 +130,7 @@ void write_checksum(int archive_fd, unsigned int sum, char* octal_str) {
 void mode_to_octal(mode_t mode, char* str, int start_index) {
     //convert the bits to octal representation manually
     str[start_index] = '0' + ((mode >> 6) & 0b111);
-    str[start_index + 1] = '0' + ((mode >> 3) & 0b111); //0x7 similar to 0b111
+    str[start_index + 1] = '0' + ((mode >> 3) & 0b111);
     str[start_index + 2] = '0' + (mode & 0b111);
 
     //null terminates the end of the string

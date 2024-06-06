@@ -9,21 +9,21 @@
 #include <grp.h>
 
 #define BUFFER_SIZE 1024
-#define HEADER_SIZE 512
-#define USTAR "ustar\0"
+// #define BLOCK_SIZE 512
+#define USTAR "ustar  \0"
 
 typedef struct {
-    char name[256]; //file name
-    char mode[8]; //file permissions
-    char uid[8]; //user id
-    char gid[8]; //group id
-    char size[12]; //file size
-    char time[12]; //modification time
-    char checksum_str[8]; //checksum
+    char name[256]; // file name
+    char mode[8]; // file permissions
+    char uid[8]; // user id
+    char gid[8]; // group id
+    char size[12]; // file size
+    char time[12]; // modification time
+    char checksum_str[8]; // checksum
     unsigned int checksum_num;
-    char typeflag[2]; //file type
-    char user[32];
-    char group[32];
+    char typeflag[2]; // file type
+    char user[32]; // user name
+    char group[32]; // group name
 }file_header;
 
 void write_file_data(int archive_fd, const char* file_name);
