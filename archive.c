@@ -13,6 +13,10 @@ void create_archive(int argc, char** argv) {
         write_file_content(archive_fd, argv[i]);
     }
 
+    char end_block[BLOCK_SIZE] = {0};
+    write(archive_fd, end_block, BLOCK_SIZE);
+    write(archive_fd, end_block, BLOCK_SIZE);
+
     close(archive_fd);
 }
 
@@ -27,6 +31,10 @@ void write_file_data(int archive_fd, const char* file_name) {
     file_header file_data;
     file_data.checksum_num = 0;
 
+    if (S_ISLNK(file_stat.st_mode)) {
+        handle_symlink(file_name, file_data);
+    } else pad_symlink(0, file_data.linkname);
+
     get_name(file_name, file_data.name, &file_data.checksum_num);
     get_mode(file_stat.st_mode, file_data.mode, &file_data.checksum_num);
     get_uid(file_stat.st_uid, file_data.uid, &file_data.checksum_num);
@@ -34,7 +42,8 @@ void write_file_data(int archive_fd, const char* file_name) {
     get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
-    checksum(&file_data.checksum_num, USTAR);
+    get_version(file_stat.st_mode, file_data);
+    checksum(&file_data.checksum_num, MAGIC);
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
     get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
 
@@ -63,22 +72,80 @@ void write_file_content(int archive_fd, const char* file_name) {
 }
 
 void write_stats(int archive_fd, file_header file_data) {
-    write(archive_fd, file_data.name, my_strlen(file_data.name));
-    write(archive_fd, file_data.mode, my_strlen(file_data.mode));
-    write(archive_fd, file_data.uid, my_strlen(file_data.uid));
-    write(archive_fd, file_data.gid, my_strlen(file_data.gid));
-    write(archive_fd, file_data.size, my_strlen(file_data.size));
-    write(archive_fd, file_data.time, my_strlen(file_data.time));
+    write(archive_fd, file_data.name, 100);
+    write(archive_fd, file_data.mode, 8);
+    write(archive_fd, file_data.uid, 8);
+    write(archive_fd, file_data.gid, 8);
+    write(archive_fd, file_data.size, 12);
+    write(archive_fd, file_data.time, 12);
     write_checksum(archive_fd, file_data.checksum_num, file_data.checksum_str);
-    write(archive_fd, file_data.typeflag, my_strlen(file_data.typeflag));
-    write(archive_fd, USTAR, my_strlen(USTAR));
-    write(archive_fd, file_data.user, my_strlen(file_data.user));
-    write(archive_fd, file_data.group, my_strlen(file_data.group));
+    write(archive_fd, file_data.typeflag, 1);    
+    write(archive_fd, file_data.linkname, 100);
+    // write(archive_fd, file_data.version, 2);
+    write(archive_fd, MAGIC, 8);
+    write(archive_fd, file_data.user, 32);
+    write(archive_fd, file_data.group, 32);
+}
+
+void handle_symlink(const char* file_name, file_header file_data) {
+    char link_target[100]; //buffer
+    ssize_t length = readlink(file_name, link_target, sizeof(link_target) - 1);
+
+    if (length == -1) {
+        printf("Error reading symbolic link\n"); //remove later
+        return;
+    }
+    link_target[length] = '\0';
+    // my_strncpy(file_data.linkname, link_target, 100);
+    linkname_to_octal(link_target, file_data.linkname);
+    if (length < 99) pad_symlink(length, file_data.linkname);
+    checksum(&file_data.checksum_num, file_data.linkname);
+
+    // Set the typeflag to indicate a symbolic link?
+}
+
+void pad_symlink(int length, char* linkname) {
+    for (int i = length; i < 100; i++) {
+        linkname[i] = '\0';
+    }
+}
+
+void linkname_to_octal(char* linkname, char* octal_str) {
+    int length = my_strlen(linkname);
+    int num = 0;
+    int factor = 1;
+
+    //Convert the string to a number
+    for (int i = length - 1; i >= 0; i--) {
+        num += (linkname[i] - '0') * factor;
+        factor *= 10;
+    }
+
+    //Convert the number to octal
+    int index = 0;
+    while (num > 0) {
+        octal_str[index++] = '0' + (num % 8);
+        num /= 8;
+    }
+
+    //Reverse the octal string
+    for (int i = 0; i < index / 2; i++) {
+        char temp = octal_str[i];
+        octal_str[i] = octal_str[index - i - 1];
+        octal_str[index - i - 1] = temp;
+    }
+
+    octal_str[index] = '\0';
 }
 
 void get_name(const char* file_name, char* name, unsigned int* sum) {
     my_strncpy(name, file_name, my_strlen(file_name));
     checksum(sum, name);
+    if (my_strlen(name) < 99) {
+        for (int i = my_strlen(name); i < 100; i++) {
+            name[i] = '\0';
+        }
+    }
 }
 
 void get_mode(mode_t mode, char* octal_str, unsigned int* sum) {
@@ -124,7 +191,7 @@ void checksum_to_octal(int checksum, char* octal_str) {
 void write_checksum(int archive_fd, unsigned int sum, char* octal_str) {
     checksum(&sum, "        \0");
     checksum_to_octal((int)sum, octal_str);
-    write(archive_fd, octal_str, my_strlen(octal_str));
+    write(archive_fd, octal_str, 8);
 }
 
 void mode_to_octal(mode_t mode, char* str, int start_index) {
@@ -222,11 +289,15 @@ void get_time(time_t time, char* octal_str, unsigned int* sum) {
 
 void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
     mode_t typeflag = mode & S_IFMT; //extract file type bits
-
     octal_str[0] = '0' + typeflag;
-    octal_str[1] = '\0';
-
     checksum(sum, octal_str);
+}
+
+void get_version(mode_t mode, file_header file_data) {
+    file_data.version[0] = '0' + ((mode >> 6) & 0b111);
+    file_data.version[1] = '0' + ((mode >> 3) & 0b111);
+    // printf("ver : %s", version);
+    checksum(&file_data.checksum_num, file_data.version);
 }
 
 void get_user_name(uid_t uid, char* str, unsigned int* sum) {
@@ -234,6 +305,12 @@ void get_user_name(uid_t uid, char* str, unsigned int* sum) {
     pw = getpwuid(uid);
     my_strncpy(str, pw->pw_name, my_strlen(pw->pw_name));
     checksum(sum, str);
+
+    if (my_strlen(str) < 31) {
+        for (int i = my_strlen(str); i < 32; i++) {
+            str[i] = '\0';
+        }
+    }
 }
 
 void get_group_name(gid_t gid, char* str, unsigned int* sum) {
@@ -241,4 +318,10 @@ void get_group_name(gid_t gid, char* str, unsigned int* sum) {
     gr = getgrgid(gid);
     my_strncpy(str, gr->gr_name, my_strlen(gr->gr_name));
     checksum(sum, str);
+
+    if (my_strlen(str) < 31) {
+        for (int i = my_strlen(str); i < 32; i++) {
+            str[i] = '\0';
+        }
+    }
 }
