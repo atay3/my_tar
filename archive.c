@@ -13,9 +13,11 @@ void create_archive(int argc, char** argv) {
         write_file_content(archive_fd, argv[i]);
     }
 
-    char end_block[BLOCK_SIZE] = {0};
-    write(archive_fd, end_block, BLOCK_SIZE);
-    write(archive_fd, end_block, BLOCK_SIZE);
+    char end_block[BUFFER_SIZE] = {0};
+    write(archive_fd, end_block, BUFFER_SIZE);
+
+    // write(archive_fd, end_block, BLOCK_SIZE);
+    // write(archive_fd, end_block, BLOCK_SIZE);
 
     close(archive_fd);
 }
@@ -34,18 +36,21 @@ void write_file_data(int archive_fd, const char* file_name) {
     if (S_ISLNK(file_stat.st_mode)) {
         handle_symlink(file_name, file_data);
     } else pad_symlink(0, file_data.linkname);
+    
 
     get_name(file_name, file_data.name, &file_data.checksum_num);
+    get_prefix(file_name, file_data.prefix, &file_data.checksum_num);
     get_mode(file_stat.st_mode, file_data.mode, &file_data.checksum_num);
     get_uid(file_stat.st_uid, file_data.uid, &file_data.checksum_num);
     get_gid(file_stat.st_gid, file_data.gid, &file_data.checksum_num);
     get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
-    get_version(file_stat.st_mode, file_data);
+    // get_version(file_stat.st_mode, file_data);
     checksum(&file_data.checksum_num, MAGIC);
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
     get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
+    get_devs(file_stat, file_data);
 
     write_stats(archive_fd, file_data);
 }
@@ -85,6 +90,11 @@ void write_stats(int archive_fd, file_header file_data) {
     write(archive_fd, MAGIC, 8);
     write(archive_fd, file_data.user, 32);
     write(archive_fd, file_data.group, 32);
+    write(archive_fd, file_data.devmajor, 8);
+    write(archive_fd, file_data.devminor, 8);
+    write(archive_fd, file_data.prefix, 155);
+    char pad[12] = {0};
+    write(archive_fd, pad, 12);
 }
 
 void handle_symlink(const char* file_name, file_header file_data) {
@@ -293,12 +303,12 @@ void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
     checksum(sum, octal_str);
 }
 
-void get_version(mode_t mode, file_header file_data) {
-    file_data.version[0] = '0' + ((mode >> 6) & 0b111);
-    file_data.version[1] = '0' + ((mode >> 3) & 0b111);
-    // printf("ver : %s", version);
-    checksum(&file_data.checksum_num, file_data.version);
-}
+// void get_version(mode_t mode, file_header file_data) {
+//     file_data.version[0] = '0' + ((mode >> 6) & 0b111);
+//     file_data.version[1] = '0' + ((mode >> 3) & 0b111);
+//     // printf("ver : %s", version);
+//     checksum(&file_data.checksum_num, file_data.version);
+// }
 
 void get_user_name(uid_t uid, char* str, unsigned int* sum) {
     struct passwd* pw;
@@ -322,6 +332,45 @@ void get_group_name(gid_t gid, char* str, unsigned int* sum) {
     if (my_strlen(str) < 31) {
         for (int i = my_strlen(str); i < 32; i++) {
             str[i] = '\0';
+        }
+    }
+}
+
+void get_devs(struct stat st, file_header file_data) { //pointer *st?
+    if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)) {
+        int_to_octal((st.st_rdev >> 8) & 0xfff, file_data.devmajor, 8);
+        int_to_octal(st.st_rdev & 0xff, file_data.devminor, 8);
+        checksum(&file_data.checksum_num, file_data.devmajor);
+        checksum(&file_data.checksum_num, file_data.devminor);
+    } else {
+        printf("accessing else block\n");
+        for (int i = 0; i < 8; i++) {
+            file_data.devmajor[i] = '\0';
+            file_data.devminor[i] = '\0';
+        }
+        printf("devmajor: %s\n", file_data.devmajor);
+        printf("devminor: %s\n", file_data.devminor);
+    }
+}
+
+void int_to_octal(int value, char* octal_str, int size) {
+    for (int i = size - 2; i >= 0; i--) {
+        octal_str[i] = '0' + (value & 7); //convert the last 3 bits to an octal digit
+        value >>= 3; //shift right by 3 bits (equivalent to dividing by 8)
+    }
+    octal_str[size - 1] = '\0';
+}
+
+void get_prefix(const char* file_name, char* prefix, unsigned int* sum) {
+    int file_name_length = my_strlen(file_name);
+    if (file_name_length > 100) {
+        int prefix_length = file_name_length - 100;
+        my_strncpy(prefix, file_name, prefix_length);
+        prefix[prefix_length] = '\0';
+        checksum(sum, prefix);
+    } else {
+        for (int i = 0; i < 155; i++) {
+            prefix[i] = '\0';
         }
     }
 }
