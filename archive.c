@@ -50,7 +50,9 @@ void write_file_data(int archive_fd, const char* file_name) {
     checksum(&file_data.checksum_num, MAGIC);
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
     get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
-    get_devs(file_stat, file_data);
+    // get_devs(file_stat, file_data);
+    get_devs(file_stat, file_data.devmajor, file_data.devminor, &file_data.checksum_num);
+
 
     write_stats(archive_fd, file_data);
 }
@@ -336,20 +338,36 @@ void get_group_name(gid_t gid, char* str, unsigned int* sum) {
     }
 }
 
-void get_devs(struct stat st, file_header file_data) { //pointer *st?
+// void get_devs(struct stat st, file_header file_data) { //pointer *st?
+//     if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)) {
+//         int_to_octal((st.st_rdev >> 8) & 0xfff, file_data.devmajor, 8);
+//         int_to_octal(st.st_rdev & 0xff, file_data.devminor, 8);
+//         checksum(&file_data.checksum_num, file_data.devmajor);
+//         checksum(&file_data.checksum_num, file_data.devminor);
+//     } else {
+//         printf("accessing else block\n");
+//         for (int i = 0; i < 8; i++) {
+//             file_data.devmajor[i] = '\0';
+//             file_data.devminor[i] = '\0';
+//         }
+//         printf("devmajor: %s\n", file_data.devmajor);
+//         printf("devminor: %s\n", file_data.devminor);
+//     }
+// }
+
+void get_devs(struct stat st, char* devmajor, char* devminor, unsigned int* sum) {
     if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)) {
-        int_to_octal((st.st_rdev >> 8) & 0xfff, file_data.devmajor, 8);
-        int_to_octal(st.st_rdev & 0xff, file_data.devminor, 8);
-        checksum(&file_data.checksum_num, file_data.devmajor);
-        checksum(&file_data.checksum_num, file_data.devminor);
+        int_to_octal((st.st_rdev >> 8) & 0xfff, devmajor, 8);
+        int_to_octal(st.st_rdev & 0xff, devminor, 8);
+        checksum(sum, devmajor);
+        checksum(sum, devminor);
     } else {
-        printf("accessing else block\n");
         for (int i = 0; i < 8; i++) {
-            file_data.devmajor[i] = '\0';
-            file_data.devminor[i] = '\0';
+            devmajor[i] = '\0';
+            devminor[i] = '\0';
         }
-        printf("devmajor: %s\n", file_data.devmajor);
-        printf("devminor: %s\n", file_data.devminor);
+        // printf("devmajor: %s\n", devmajor);
+        // printf("devminor: %s\n", devminor);
     }
 }
 

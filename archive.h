@@ -55,7 +55,8 @@ void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum);
 // void get_version(mode_t mode, file_header file_data);
 void get_user_name(uid_t uid, char* str, unsigned int* sum);
 void get_group_name(gid_t gid, char* str, unsigned int* sum);
-void get_devs(struct stat st, file_header file_data);
+// void get_devs(struct stat st, file_header file_data);
+void get_devs(struct stat st, char* devmajor, char* devminor, unsigned int* sum);
 void get_prefix(const char* file_name, char* prefix, unsigned int* sum);
 void int_to_octal(int value, char* octal_str, int size);
 
