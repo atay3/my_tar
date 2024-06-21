@@ -23,7 +23,7 @@ typedef struct {
     unsigned int checksum_num;
     char typeflag[1]; // file type
     char linkname[100]; // linkname
-    char version[3]; // version
+    char version[2]; // version
     char user[32]; // user name
     char group[32]; // group name
     char devmajor[8];
@@ -52,10 +52,9 @@ void checksum(unsigned int* sum, char* field);
 void checksum_to_octal(int checksum, char* octal_str);
 void write_checksum(int archive_fd, unsigned int sum, char* octal_str);
 void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum);
-// void get_version(mode_t mode, file_header file_data);
+// void get_version(mode_t mode, char* octal_str, unsigned int* sum);
 void get_user_name(uid_t uid, char* str, unsigned int* sum);
 void get_group_name(gid_t gid, char* str, unsigned int* sum);
-// void get_devs(struct stat st, file_header file_data);
 void get_devs(struct stat st, char* devmajor, char* devminor, unsigned int* sum);
 void get_prefix(const char* file_name, char* prefix, unsigned int* sum);
 void int_to_octal(int value, char* octal_str, int size);
