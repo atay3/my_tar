@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
 	    create_archive(argc, argv);
     }
     else if (my_strcmp("-rf", option) == 0) {
-	    //new entries are appended to the archive. the -f option is req"
+	    append_archive(argc, argv);
     }
     else if (my_strcmp("-tf", option) == 0) {
 	    //list archive contents to stdout
