@@ -62,12 +62,13 @@ void write_file_content(int archive_fd, const char* file_name) {
         return;
     }
 
-    char buffer[BUFFER_SIZE];
+    char buffer[BLOCK_SIZE];
     ssize_t bytes_read;
     // ssize_t total_bytes_written = 0;
 
-    while ((bytes_read = read(file_fd, buffer, BUFFER_SIZE)) > 0) {
-        if (write(archive_fd, buffer, bytes_read) != bytes_read) {
+    while ((bytes_read = read(file_fd, buffer, BLOCK_SIZE)) > 0) {
+        // write(archive_fd, buffer, bytes_read) != bytes_read
+        if (write(archive_fd, buffer, bytes_read) < BLOCK_SIZE) {
             printf("Error writing file contents\n"); //remove later
             return;
         }
