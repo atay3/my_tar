@@ -13,10 +13,6 @@ void create_archive(int argc, char** argv) {
         write_file_content(archive_fd, argv[i]);
     }
 
-    char end_block[BLOCK_SIZE] = {0};
-    write(archive_fd, end_block, BLOCK_SIZE);
-    // write(archive_fd, end_block, BLOCK_SIZE);
-
     close(archive_fd);
 }
 
@@ -67,8 +63,7 @@ void write_file_content(int archive_fd, const char* file_name) {
     // ssize_t total_bytes_written = 0;
 
     while ((bytes_read = read(file_fd, buffer, BLOCK_SIZE)) > 0) {
-        // write(archive_fd, buffer, bytes_read) != bytes_read
-        if (write(archive_fd, buffer, bytes_read) < BLOCK_SIZE) {
+        if (write(archive_fd, buffer, bytes_read) != bytes_read) {
             printf("Error writing file contents\n"); //remove later
             return;
         }
@@ -76,6 +71,11 @@ void write_file_content(int archive_fd, const char* file_name) {
     }
 
     close(file_fd);
+
+    char end_block[BLOCK_SIZE] = {0};
+    for (int i = 0; i < BLOCKING_FACTOR; i++) {
+        write(archive_fd, end_block, BLOCK_SIZE);
+    }
 
     // ssize_t padding = BLOCK_SIZE - (total_bytes_written % BLOCK_SIZE);
     // if (padding < BLOCK_SIZE) {
