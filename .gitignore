@@ -1,0 +1,11 @@
+# Ignore compiled object files
+obj/
+
+# Ignore executables
+my_tar
+
+# Ignore temporary files
+*~
+
+# Ignore specific files or directories
+# tests.sh

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-f1="/home/ashtay/my_tar/ref2.tar"
-f2="/home/ashtay/my_tar/test2.tar"
+f1="/home/ashtay/my_tar/test/ref2.tar"
+f2="/home/ashtay/my_tar/test/test2.tar"
 
 rm -f $f1 $f2
 
