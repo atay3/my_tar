@@ -8,4 +8,5 @@ my_tar
 *~
 
 # Ignore specific files or directories
-# tests.sh
+tests.sh
+mirror.sh

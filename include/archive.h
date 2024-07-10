@@ -8,7 +8,6 @@
 #include <pwd.h>
 #include <grp.h>
 
-#define BUFFER_SIZE 1024
 #define BLOCK_SIZE 512
 #define BLOCKING_FACTOR 20
 #define MAGIC "ustar  \0"
