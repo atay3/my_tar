@@ -29,12 +29,12 @@ typedef struct {
     char devmajor[8];
     char devminor[8];
     char prefix[155];
-} file_header;
+} posix_header;
 
 void write_file_data(int archive_fd, const char* file_name);
 void write_file_content(int archive_fd, const char* file_name);
-void write_stats(int archive_fd, file_header file_data);
-void handle_symlink(const char* file_name, file_header file_data);
+void write_stats(int archive_fd, posix_header file_data);
+void handle_symlink(const char* file_name, posix_header file_data);
 void pad_symlink(int length, char* linkname);
 void linkname_to_octal(char* linkname, char* octal_str);
 void get_name(const char* file_name, char* name, unsigned int* sum);

@@ -19,7 +19,7 @@ void append_archive(int argc, char** argv) {
 
     for (int i = 3; i < argc; i++) {
         char* file = argv[i];
-        int file_fd = open(file, O_RDONLY);
+        int file_fd = open(file, O_APPEND);
         if (file_fd == -1) {
             printf("Failed to open input file");
             continue;

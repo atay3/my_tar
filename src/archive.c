@@ -6,12 +6,17 @@ void create_archive(int argc, char** argv) {
     char* archive_name = argv[2];
 
     //archive file descriptor
-    int archive_fd = open(archive_name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int archive_fd = open(archive_name, O_WRONLY | O_APPEND | O_CREAT, 0644);
 
     for (int i = 3; i < argc; i++) {
         write_file_data(archive_fd, argv[i]);
         write_file_content(archive_fd, argv[i]);
     }
+
+    // char end_block[BLOCK_SIZE] = {0};
+    // for (int i = 0; i < BLOCKING_FACTOR; i++) {
+    //     write(archive_fd, end_block, BLOCK_SIZE);
+    // }
 
     close(archive_fd);
 }
@@ -24,7 +29,7 @@ void write_file_data(int archive_fd, const char* file_name) {
         return;
     }
 
-    file_header file_data;
+    posix_header file_data;
     file_data.checksum_num = 0;
 
     if (S_ISLNK(file_stat.st_mode)) {
@@ -60,37 +65,23 @@ void write_file_content(int archive_fd, const char* file_name) {
 
     char buffer[BLOCK_SIZE];
     ssize_t bytes_read;
-    // ssize_t total_bytes_written = 0;
 
     while ((bytes_read = read(file_fd, buffer, BLOCK_SIZE)) > 0) {
         if (write(archive_fd, buffer, bytes_read) != bytes_read) {
             printf("Error writing file contents\n"); //remove later
             return;
         }
-        // total_bytes_written += bytes_read;
     }
 
     close(file_fd);
 
-    char end_block[BLOCK_SIZE] = {0};
-    for (int i = 0; i < BLOCKING_FACTOR; i++) {
-        write(archive_fd, end_block, BLOCK_SIZE);
-    }
-
-    // ssize_t padding = BLOCK_SIZE - (total_bytes_written % BLOCK_SIZE);
-    // if (padding < BLOCK_SIZE) {
-    //     // Manually pad with null bytes
-    //     for (ssize_t i = 0; i < padding; i++) {
-    //         if (write(archive_fd, "\0", 1) != 1) {
-    //             perror("Error writing padding bytes");
-    //             close(file_fd);
-    //             return;
-    //         }
-    //     }
+    // char end_block[BLOCK_SIZE] = {0};
+    // for (int i = 0; i < BLOCKING_FACTOR; i++) {
+    //     write(archive_fd, end_block, BLOCK_SIZE);
     // }
 }
 
-void write_stats(int archive_fd, file_header file_data) {
+void write_stats(int archive_fd, posix_header file_data) {
     write(archive_fd, file_data.name, 100);
     write(archive_fd, file_data.mode, 8);
     write(archive_fd, file_data.uid, 8);
@@ -106,12 +97,12 @@ void write_stats(int archive_fd, file_header file_data) {
     write(archive_fd, file_data.group, 32);
     write(archive_fd, file_data.devmajor, 8);
     write(archive_fd, file_data.devminor, 8);
-    write(archive_fd, file_data.prefix, 155);
+    // write(archive_fd, file_data.prefix, 155);
     char pad[12] = {0};
     write(archive_fd, pad, 12);
 }
 
-void handle_symlink(const char* file_name, file_header file_data) {
+void handle_symlink(const char* file_name, posix_header file_data) {
     char link_target[100]; //buffer
     ssize_t length = readlink(file_name, link_target, sizeof(link_target) - 1);
 
