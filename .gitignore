@@ -1,6 +1,9 @@
 # Ignore compiled object files
 obj/
 
+# Ignore the 'test' directory
+test/
+
 # Ignore executables
 my_tar
 
@@ -10,3 +13,4 @@ my_tar
 # Ignore specific files or directories
 tests.sh
 mirror.sh
+push_repos.sh
