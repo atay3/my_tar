@@ -10,7 +10,7 @@ void append_archive(int argc, char** argv) {
     }
 
     char* archive_name = argv[2]; // archive to write in
-    char* buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE];
     int archive_fd = open(archive_name, O_WRONLY | O_CREAT | O_TRUNC, 0644); // open the archive that is being written into
     if (archive_fd == -1) {
         printf("Failed to open archive file");
@@ -19,7 +19,7 @@ void append_archive(int argc, char** argv) {
 
     for (int i = 3; i < argc; i++) {
         char* file = argv[i];
-        int file_fd = open(file, O_APPEND);
+        int file_fd = open(file, O_RDONLY);
         if (file_fd == -1) {
             printf("Failed to open input file");
             continue;

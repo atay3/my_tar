@@ -7,16 +7,19 @@ void create_archive(int argc, char** argv) {
 
     //archive file descriptor
     int archive_fd = open(archive_name, O_WRONLY | O_APPEND | O_CREAT, 0644);
+    // int archive_fd = open(archive_name, O_WRONLY | O_TRUNC | O_CREAT, 0644);
 
+    // char test_block[180] = {0};
     for (int i = 3; i < argc; i++) {
         write_file_data(archive_fd, argv[i]);
         write_file_content(archive_fd, argv[i]);
+        // write(archive_fd, test_block, 180);
     }
 
-    // char end_block[BLOCK_SIZE] = {0};
-    // for (int i = 0; i < BLOCKING_FACTOR; i++) {
-    //     write(archive_fd, end_block, BLOCK_SIZE);
-    // }
+    char end_block[BLOCK_SIZE] = {0};
+    for (int i = 0; i < BLOCKING_FACTOR; i++) {
+        write(archive_fd, end_block, BLOCK_SIZE);
+    }
 
     close(archive_fd);
 }
@@ -97,7 +100,7 @@ void write_stats(int archive_fd, posix_header file_data) {
     write(archive_fd, file_data.group, 32);
     write(archive_fd, file_data.devmajor, 8);
     write(archive_fd, file_data.devminor, 8);
-    // write(archive_fd, file_data.prefix, 155);
+    write(archive_fd, file_data.prefix, 155);
     char pad[12] = {0};
     write(archive_fd, pad, 12);
 }
