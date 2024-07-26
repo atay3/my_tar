@@ -6,8 +6,8 @@ void create_archive(int argc, char** argv) {
     char* archive_name = argv[2];
 
     //archive file descriptor
-    int archive_fd = open(archive_name, O_WRONLY | O_APPEND | O_CREAT, 0644);
-    // int archive_fd = open(archive_name, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+    // int archive_fd = open(archive_name, O_WRONLY | O_APPEND | O_CREAT, 0644);
+    int archive_fd = open(archive_name, O_WRONLY | O_TRUNC | O_CREAT, 0644);
 
     // char test_block[180] = {0};
     for (int i = 3; i < argc; i++) {
@@ -48,7 +48,7 @@ void write_file_data(int archive_fd, const char* file_name) {
     get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
-    // get_version(file_stat.st_mode, file_data.version, &file_data.checksum_num);
+    get_version(file_stat.st_mode, file_data.version, &file_data.checksum_num);
     checksum(&file_data.checksum_num, MAGIC);
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
     get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
@@ -68,20 +68,29 @@ void write_file_content(int archive_fd, const char* file_name) {
 
     char buffer[BLOCK_SIZE];
     ssize_t bytes_read;
+    ssize_t total_bytes_written = 0;
 
     while ((bytes_read = read(file_fd, buffer, BLOCK_SIZE)) > 0) {
         if (write(archive_fd, buffer, bytes_read) != bytes_read) {
             printf("Error writing file contents\n"); //remove later
             return;
         }
+        total_bytes_written += bytes_read;
+    }
+
+    printf("total bytes written: %ld\n", total_bytes_written);
+
+    ssize_t padding_size = (BLOCK_SIZE - (total_bytes_written % BLOCK_SIZE)) % BLOCK_SIZE;
+    if (padding_size > 0) {
+        char padding[BLOCK_SIZE] = {0};
+        if (write(archive_fd, padding, padding_size) != padding_size) {
+            perror("Error writing padding");
+        } else {
+            printf("Wrote %ld bytes of padding\n", padding_size);
+        }
     }
 
     close(file_fd);
-
-    // char end_block[BLOCK_SIZE] = {0};
-    // for (int i = 0; i < BLOCKING_FACTOR; i++) {
-    //     write(archive_fd, end_block, BLOCK_SIZE);
-    // }
 }
 
 void write_stats(int archive_fd, posix_header file_data) {
@@ -94,7 +103,7 @@ void write_stats(int archive_fd, posix_header file_data) {
     write_checksum(archive_fd, file_data.checksum_num, file_data.checksum_str);
     write(archive_fd, file_data.typeflag, 1);    
     write(archive_fd, file_data.linkname, 100);
-    // write(archive_fd, file_data.version, 2);
+    write(archive_fd, file_data.version, 2);
     write(archive_fd, MAGIC, 8);
     write(archive_fd, file_data.user, 32);
     write(archive_fd, file_data.group, 32);
@@ -311,12 +320,12 @@ void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
     checksum(sum, octal_str);
 }
 
-// void get_version(mode_t mode, char* octal_str, unsigned int* sum) {
-//     octal_str[0] = '0' + ((mode >> 6) & 0b111);
-//     octal_str[1] = '0' + ((mode >> 3) & 0b111);
-//     // printf("ver : %s", version);
-//     checksum(sum, octal_str);
-// }
+void get_version(mode_t mode, char* octal_str, unsigned int* sum) {
+    octal_str[0] = '0' + ((mode >> 6) & 0b111);
+    octal_str[1] = '0' + ((mode >> 3) & 0b111);
+    // printf("ver : %s", version);
+    checksum(sum, octal_str);
+}
 
 void get_user_name(uid_t uid, char* str, unsigned int* sum) {
     struct passwd* pw;
