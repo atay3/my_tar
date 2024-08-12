@@ -103,7 +103,7 @@ void write_stats(int archive_fd, posix_header file_data) {
     write_checksum(archive_fd, file_data.checksum_num, file_data.checksum_str);
     write(archive_fd, file_data.typeflag, 1);    
     write(archive_fd, file_data.linkname, 100);
-    write(archive_fd, file_data.version, 2);
+    // write(archive_fd, file_data.version, 2);
     write(archive_fd, MAGIC, 8);
     write(archive_fd, file_data.user, 32);
     write(archive_fd, file_data.group, 32);
