@@ -1,7 +1,7 @@
 #include "append.h"
 #include "archive.h"
 #include "main.h"
-#include "utils.h" // note: using for testing
+#include "utils.h"
 
 void append_archive(int argc, char** argv) {
     if (argc < 4) {
@@ -9,50 +9,52 @@ void append_archive(int argc, char** argv) {
         return;
     }
 
-    char* archive_name = argv[2]; // archive to write in
-    char buffer[BUFFER_SIZE];
-    int archive_fd = open(archive_name, O_WRONLY | O_CREAT | O_TRUNC, 0644); // open the archive that is being written into
+    char* archive_name = argv[2];
+    int archive_fd = open(archive_name, O_RDWR);
     if (archive_fd == -1) {
         printf("Failed to open archive file");
         return;
     }
 
+    off_t pos = lseek(archive_fd, -(BLOCK_SIZE), SEEK_END);
+    char* file_name = argv[3];
+    char buffer[BLOCK_SIZE];
+    // posix_header file_data;
+
+    if (!is_end_of_archive(archive_fd, buffer)) {
+        pos = lseek(archive_fd, BLOCK_SIZE, SEEK_CUR);
+    }
+
     for (int i = 3; i < argc; i++) {
-        char* file = argv[i];
-        int file_fd = open(file, O_RDONLY);
+        char* file_name = argv[i];
+        int file_fd = open(file_name, O_RDONLY);
         if (file_fd == -1) {
             printf("Failed to open input file");
             continue;
         }
 
-        ssize_t bytes_read;
-        ssize_t total_bytes_written = 0;
-
-        while ((bytes_read = read(file_fd, buffer, BUFFER_SIZE)) > 0) {
-            ssize_t bytes_written = write(archive_fd, buffer, bytes_read);
-            if (bytes_written != bytes_read) {
-                printf("Failed to write file content to archive");
-                break;
-            }
-            total_bytes_written += bytes_written;
-        }
-
-        if (bytes_read == -1) {
-            printf("Failed to read file content");
-        }
-
-        // calculate and add padding if necessary
-        int padding = BUFFER_SIZE - (total_bytes_written % BUFFER_SIZE);
-        if (padding != BUFFER_SIZE) {
-            char pad[BUFFER_SIZE] = {0};
-            ssize_t bytes_written = write(archive_fd, pad, padding);
-            if (bytes_written != padding) {
-                perror("Failed to write padding to archive");
-            }
-        }
+        write_file_data(archive_fd, file_name);
 
         close(file_fd);
     }
 
     close(archive_fd);
 }
+
+// bool is_end_of_archive(int archive_fd, char* buffer) {
+//     // Read the last block
+//     ssize_t bytes_read = read(archive_fd, buffer, BLOCK_SIZE);
+//     if (bytes_read != BLOCK_SIZE) {
+//         perror("read failed");
+//         return false;
+//     }
+
+//     // Check if the last block is entirely null bytes
+//     for (int i = 0; i < BLOCK_SIZE; i++) {
+//         if (buffer[i] != '\0') {
+//             return false;
+//         }
+//     }
+
+//     return true;
+// }

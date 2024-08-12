@@ -56,3 +56,15 @@ int my_strcmp(const char* str_1, const char* str_2) {
     }
     return 0;
 }
+
+int my_memcmp(const void *dest, const void *src, size_t n) {
+    const char* srcp = (const char*)src;
+    const char* destp = (const char*)dest;
+
+    for (size_t i = 0; i < n; i++) {
+        if (srcp[i] != destp[i]) {
+            return srcp[i] - destp[i];
+        }
+    }
+    return 0; // memory blocks are equal
+}
