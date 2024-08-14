@@ -1,5 +1,5 @@
 #include "append.h"
-#include "archive.h"
+// #include "archive.h"
 #include "main.h"
 #include "utils.h"
 
@@ -17,12 +17,21 @@ void append_archive(int argc, char** argv) {
     }
 
     off_t pos = lseek(archive_fd, -(BLOCK_SIZE), SEEK_END);
-    char* file_name = argv[3];
-    char buffer[BLOCK_SIZE];
-    // posix_header file_data;
+    // char buffer[BLOCK_SIZE];
+    posix_header file_data;
 
-    if (!is_end_of_archive(archive_fd, buffer)) {
-        pos = lseek(archive_fd, BLOCK_SIZE, SEEK_CUR);
+    while (read(archive_fd, &file_data, BLOCK_SIZE) == BLOCK_SIZE) {
+
+        if (is_end_of_archive(&file_data)) {
+            printf("EOF marker\n");
+            pos -= BLOCK_SIZE;
+            lseek(archive_fd, -pos, SEEK_CUR);
+        }
+
+        // size_t file_size = strtoll(file_data.size, NULL, 8);
+        // size_t padding = (BLOCK_SIZE - (file_size % BLOCK_SIZE)) % BLOCK_SIZE;
+        // lseek(archive_fd, file_size + padding, SEEK_CUR);
+        
     }
 
     for (int i = 3; i < argc; i++) {
@@ -58,3 +67,12 @@ void append_archive(int argc, char** argv) {
 
 //     return true;
 // }
+
+bool is_end_of_archive(posix_header* file_data) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        if (((const char*)file_data)[i] != '\0') {
+            return false;
+        }
+    }
+    return true;
+}

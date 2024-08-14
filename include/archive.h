@@ -29,6 +29,7 @@ typedef struct {
     char devmajor[8];
     char devminor[8];
     char prefix[155];
+    char offset[12];
 } posix_header;
 
 void write_file_data(int archive_fd, const char* file_name);
@@ -58,5 +59,6 @@ void get_group_name(gid_t gid, char* str, unsigned int* sum);
 void get_devs(struct stat st, char* devmajor, char* devminor, unsigned int* sum);
 void get_prefix(const char* file_name, char* prefix, unsigned int* sum);
 void int_to_octal(int value, char* octal_str, int size);
+void set_offset(char* offset);
 
 #endif
