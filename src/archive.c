@@ -9,11 +9,9 @@ void create_archive(int argc, char** argv) {
     // int archive_fd = open(archive_name, O_WRONLY | O_APPEND | O_CREAT, 0644);
     int archive_fd = open(archive_name, O_WRONLY | O_TRUNC | O_CREAT, 0644);
 
-    // char test_block[180] = {0};
     for (int i = 3; i < argc; i++) {
         write_file_data(archive_fd, argv[i]);
         write_file_content(archive_fd, argv[i]);
-        // write(archive_fd, test_block, 180);
     }
 
     char end_block[BLOCK_SIZE] = {0};
@@ -53,7 +51,7 @@ void write_file_data(int archive_fd, const char* file_name) {
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
     get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
     get_devs(file_stat, file_data.devmajor, file_data.devminor, &file_data.checksum_num);
-
+    set_offset(file_data.offset);
 
     write_stats(archive_fd, file_data);
 }
@@ -110,8 +108,7 @@ void write_stats(int archive_fd, posix_header file_data) {
     write(archive_fd, file_data.devmajor, 8);
     write(archive_fd, file_data.devminor, 8);
     write(archive_fd, file_data.prefix, 155);
-    char pad[12] = {0};
-    write(archive_fd, pad, 12);
+    write(archive_fd, file_data.offset, 12);
 }
 
 void handle_symlink(const char* file_name, posix_header file_data) {
@@ -123,7 +120,6 @@ void handle_symlink(const char* file_name, posix_header file_data) {
         return;
     }
     link_target[length] = '\0';
-    // my_strncpy(file_data.linkname, link_target, 100);
     linkname_to_octal(link_target, file_data.linkname);
     if (length < 99) pad_symlink(length, file_data.linkname);
     checksum(&file_data.checksum_num, file_data.linkname);
@@ -388,5 +384,11 @@ void get_prefix(const char* file_name, char* prefix, unsigned int* sum) {
         for (int i = 0; i < 155; i++) {
             prefix[i] = '\0';
         }
+    }
+}
+
+void set_offset(char* offset) {
+    for (int i = 0; i < 12; i++) {
+        offset[i] = '\0';
     }
 }
