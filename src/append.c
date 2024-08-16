@@ -17,35 +17,41 @@ void append_archive(int argc, char** argv) {
     }
 
     off_t pos = lseek(archive_fd, -(BLOCK_SIZE), SEEK_END);
-    // char buffer[BLOCK_SIZE];
     posix_header file_data;
+    char* file_name = argv[3];
 
     while (read(archive_fd, &file_data, BLOCK_SIZE) == BLOCK_SIZE) {
 
-        if (is_end_of_archive(&file_data)) {
-            printf("EOF marker\n");
-            pos -= BLOCK_SIZE;
-            lseek(archive_fd, -pos, SEEK_CUR);
-        }
+        if (!is_end_of_archive(&file_data)) {
+            size_t size = strtoll(file_data.size, NULL, 8);
+            if (size % BLOCK_SIZE){
+                size += BLOCK_SIZE - size % BLOCK_SIZE;
+            }
+            pos = lseek(archive_fd, size, SEEK_CUR);
+            write_file_data(archive_fd, file_name);
+            struct stat s;
+            stat(file_name, &s);
+            int fd = open(file_name, O_RDONLY);
 
-        // size_t file_size = strtoll(file_data.size, NULL, 8);
-        // size_t padding = (BLOCK_SIZE - (file_size % BLOCK_SIZE)) % BLOCK_SIZE;
-        // lseek(archive_fd, file_size + padding, SEEK_CUR);
-        
+            close(fd);
+            return;
+        }
+        pos -= BLOCK_SIZE;
+        lseek(archive_fd, -pos, SEEK_CUR);
     }
 
-    for (int i = 3; i < argc; i++) {
-        char* file_name = argv[i];
-        int file_fd = open(file_name, O_RDONLY);
-        if (file_fd == -1) {
-            printf("Failed to open input file");
-            continue;
-        }
+    // for (int i = 3; i < argc; i++) {
+    //     char* file_name = argv[i];
+    //     int file_fd = open(file_name, O_RDONLY);
+    //     if (file_fd == -1) {
+    //         printf("Failed to open input file");
+    //         continue;
+    //     }
 
-        write_file_data(archive_fd, file_name);
+    //     write_file_data(archive_fd, file_name);
 
-        close(file_fd);
-    }
+    //     close(file_fd);
+    // }
 
     close(archive_fd);
 }
