@@ -18,11 +18,13 @@ void append_archive(int argc, char** argv) {
 
     off_t pos = lseek(archive_fd, -(BLOCK_SIZE), SEEK_END);
     posix_header file_data;
-    char* file_name = argv[3];
+    int i = 3; // index of file_name
+    // char* file_name = argv[3];
 
     while (read(archive_fd, &file_data, BLOCK_SIZE) == BLOCK_SIZE) {
 
-        if (!is_end_of_archive(&file_data)) {
+        if (!is_end_of_archive(&file_data) && i < argc) {
+            char* file_name = argv[i];
             size_t size = strtoll(file_data.size, NULL, 8);
             if (size % BLOCK_SIZE){
                 size += BLOCK_SIZE - size % BLOCK_SIZE;
@@ -33,9 +35,9 @@ void append_archive(int argc, char** argv) {
             // struct stat s;
             // stat(file_name, &s);
             // int fd = open(file_name, O_RDONLY);
-
             // close(fd);
-            return;
+            i++;
+            // return;
         }
         pos -= BLOCK_SIZE;
         lseek(archive_fd, -pos, SEEK_CUR);
