@@ -29,11 +29,12 @@ void append_archive(int argc, char** argv) {
             }
             pos = lseek(archive_fd, size, SEEK_CUR);
             write_file_data(archive_fd, file_name);
-            struct stat s;
-            stat(file_name, &s);
-            int fd = open(file_name, O_RDONLY);
+            write_file_content(archive_fd, file_name);
+            // struct stat s;
+            // stat(file_name, &s);
+            // int fd = open(file_name, O_RDONLY);
 
-            close(fd);
+            // close(fd);
             return;
         }
         pos -= BLOCK_SIZE;
