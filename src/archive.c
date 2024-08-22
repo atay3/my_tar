@@ -15,8 +15,13 @@ void create_archive(int argc, char** argv) {
     }
 
     char end_block[BLOCK_SIZE] = {0};
-    for (int i = 0; i < BLOCKING_FACTOR; i++) {
+    
+    // calculate current size of the archive
+    off_t archive_size = lseek(archive_fd, 0, SEEK_END);
+
+    while (archive_size < 10240) {
         write(archive_fd, end_block, BLOCK_SIZE);
+        archive_size += BLOCK_SIZE;
     }
 
     close(archive_fd);
@@ -46,7 +51,8 @@ void write_file_data(int archive_fd, const char* file_name) {
     get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
-    get_version(file_stat.st_mode, file_data.version, &file_data.checksum_num);
+    // get_version(file_stat.st_mode, file_data.version, &file_data.checksum_num);
+    get_version(file_data.version, &file_data.checksum_num);
     checksum(&file_data.checksum_num, MAGIC);
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
     get_group_name(file_stat.st_gid, file_data.group, &file_data.checksum_num);
@@ -78,7 +84,7 @@ void write_file_content(int archive_fd, const char* file_name) {
 
     printf("total bytes written: %ld\n", total_bytes_written);
 
-    ssize_t padding_size = (BLOCK_SIZE - (total_bytes_written % BLOCK_SIZE)) % BLOCK_SIZE;
+    ssize_t padding_size = BLOCK_SIZE - (total_bytes_written % BLOCK_SIZE);
     if (padding_size > 0) {
         char padding[BLOCK_SIZE] = {0};
         if (write(archive_fd, padding, padding_size) != padding_size) {
@@ -109,6 +115,13 @@ void write_stats(int archive_fd, posix_header file_data) {
     write(archive_fd, file_data.devminor, 8);
     write(archive_fd, file_data.prefix, 155);
     write(archive_fd, file_data.offset, 12);
+
+    ssize_t header_written_size = 100 + 8 + 8 + 8 + 12 + 12 + 8 + 1 + 100 + 2 + 8 + 32 + 32 + 8 + 8 + 155 + 12; // 514
+    ssize_t padding_size = (BLOCK_SIZE - header_written_size);
+    // if (padding_size < 0) padding_size = BLOCK_SIZE + padding_size;
+    // else padding_size = BLOCK_SIZE - padding_size;
+    printf("padding after header: %ld, header size: %ld\n", padding_size, header_written_size);
+    
 }
 
 void handle_symlink(const char* file_name, posix_header file_data) {
@@ -195,8 +208,8 @@ void checksum(unsigned int* sum, char* field) {
 
 void checksum_to_octal(int checksum, char* octal_str) {
     int end_index = 7;
-    octal_str[end_index--] = '\0';
     octal_str[end_index--] = ' ';
+    octal_str[end_index--] = '\0';
 
     while (checksum != 0) {
         uint8_t octal_digit = checksum & 0b111;
@@ -316,11 +329,19 @@ void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
     checksum(sum, octal_str);
 }
 
-void get_version(mode_t mode, char* octal_str, unsigned int* sum) {
-    octal_str[0] = '0' + ((mode >> 6) & 0b111);
-    octal_str[1] = '0' + ((mode >> 3) & 0b111);
+// void get_version(mode_t mode, char* octal_str, unsigned int* sum) {
+//     octal_str[0] = '0' + ((mode >> 6) & 0b111);
+//     octal_str[1] = '0' + ((mode >> 3) & 0b111);
+//     // printf("ver : %s", version);
+//     checksum(sum, octal_str);
+// }
+
+void get_version(char* octal_str, unsigned int* sum) {
+    octal_str[0] = '0';
+    octal_str[1] = '0';
     // printf("ver : %s", version);
-    checksum(sum, octal_str);
+    // checksum(sum, octal_str);
+    checksum(sum, "\0\0");
 }
 
 void get_user_name(uid_t uid, char* str, unsigned int* sum) {
