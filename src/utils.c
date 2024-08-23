@@ -57,14 +57,30 @@ int my_strcmp(const char* str_1, const char* str_2) {
     return 0;
 }
 
-int my_memcmp(const void *dest, const void *src, size_t n) {
-    const char* srcp = (const char*)src;
-    const char* destp = (const char*)dest;
+// int my_memcmp(const void *dest, const void *src, size_t n) {
+//     const char* srcp = (const char*)src;
+//     const char* destp = (const char*)dest;
 
-    for (size_t i = 0; i < n; i++) {
-        if (srcp[i] != destp[i]) {
-            return srcp[i] - destp[i];
-        }
-    }
-    return 0; // memory blocks are equal
+//     for (size_t i = 0; i < n; i++) {
+//         if (srcp[i] != destp[i]) {
+//             return srcp[i] - destp[i];
+//         }
+//     }
+//     return 0; // memory blocks are equal
+// }
+
+void print_file_dne(char* file_name) {
+    char* msg_1 = "my_tar: ";
+    char* msg_2 = ": Cannot stat: No such file or directory\n";
+    write(STDERR_FILENO, msg_1, my_strlen(msg_1));
+    write(STDERR_FILENO, file_name, my_strlen(file_name));
+    write(STDERR_FILENO, msg_2, my_strlen(msg_2));
+}
+
+void print_tar_error(char* archive_name) {
+    char* msg_1 = "my_tar: Cannot open ";
+    char newline = '\n';
+    write(STDERR_FILENO, msg_1, my_strlen(msg_1));
+    write(STDERR_FILENO, archive_name, my_strlen(archive_name));
+    write(STDERR_FILENO, &newline, 1);
 }

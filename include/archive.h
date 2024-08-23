@@ -9,7 +9,7 @@
 #include <grp.h>
 
 #define BLOCK_SIZE 512
-#define BLOCKING_FACTOR 20
+#define MIN_ARCHIVE_SIZE 10240
 #define MAGIC "ustar  \0"
 
 typedef struct {
@@ -32,8 +32,8 @@ typedef struct {
     char offset[12];
 } posix_header;
 
-void write_file_data(int archive_fd, const char* file_name);
-void write_file_content(int archive_fd, const char* file_name);
+int write_file_data(int archive_fd, const char* file_name);
+int write_file_content(int archive_fd, const char* file_name);
 void write_stats(int archive_fd, posix_header file_data);
 void handle_symlink(const char* file_name, posix_header file_data);
 void pad_symlink(int length, char* linkname);
