@@ -9,12 +9,13 @@ int main(int argc, char** argv) {
     }
 
     char* option = argv[1];
+    int status = 0;
 
     if (my_strcmp("-cf", option) == 0) {
-	    create_archive(argc, argv);
+	    status = create_archive(argc, argv);
     }
     else if (my_strcmp("-rf", option) == 0) {
-	    append_archive(argc, argv);
+	    status = append_archive(argc, argv);
     }
     else if (my_strcmp("-tf", option) == 0) {
 	    //list archive contents to stdout
@@ -26,5 +27,7 @@ int main(int argc, char** argv) {
 	    //extract to disk from the archive. if a file with the smae name appears more than once in the archive, each copy will be extracted, with later copies overwriting (replacing) earlier copies
     }
 
-    return 0;
+
+
+    return status;
 }

@@ -2,16 +2,21 @@
 #include "archive.h"
 #include "utils.h"
 
-void create_archive(int argc, char** argv) {
+int create_archive(int argc, char** argv) {
     char* archive_name = argv[2];
 
     //archive file descriptor
-    // int archive_fd = open(archive_name, O_WRONLY | O_APPEND | O_CREAT, 0644);
     int archive_fd = open(archive_name, O_WRONLY | O_TRUNC | O_CREAT, 0644);
 
     for (int i = 3; i < argc; i++) {
-        write_file_data(archive_fd, argv[i]);
-        write_file_content(archive_fd, argv[i]);
+        if (write_file_data(archive_fd, argv[i]) < 0) {
+            print_file_dne(argv[i]);
+            return -1;
+        }
+        if (write_file_content(archive_fd, argv[i]) < 0) {
+            print_file_dne(argv[i]);
+            return -1;
+        }
     }
 
     char end_block[BLOCK_SIZE] = {0};
@@ -19,20 +24,20 @@ void create_archive(int argc, char** argv) {
     // calculate current size of the archive
     off_t archive_size = lseek(archive_fd, 0, SEEK_END);
 
-    while (archive_size < 10240) {
+    while (archive_size < MIN_ARCHIVE_SIZE) {
         write(archive_fd, end_block, BLOCK_SIZE);
         archive_size += BLOCK_SIZE;
     }
 
     close(archive_fd);
+    return 0;
 }
 
-void write_file_data(int archive_fd, const char* file_name) {
+int write_file_data(int archive_fd, const char* file_name) {
     struct stat file_stat;
 
-    if (lstat(file_name, &file_stat) == -1) {
-        printf("Error retrieving file stats\n"); //remove later
-        return;
+    if (lstat(file_name, &file_stat) != 0) {
+        return -1;
     }
 
     posix_header file_data;
@@ -60,14 +65,16 @@ void write_file_data(int archive_fd, const char* file_name) {
     set_offset(file_data.offset);
 
     write_stats(archive_fd, file_data);
+
+    return 0;
 }
 
-void write_file_content(int archive_fd, const char* file_name) {
+int write_file_content(int archive_fd, const char* file_name) {
     int file_fd = open(file_name, O_RDONLY);
 
-    if (file_fd == -1) {
+    if (file_fd < 0) {
         printf("Error opening file\n"); //remove later
-        return;
+        return -1;
     }
 
     char buffer[BLOCK_SIZE];
@@ -77,7 +84,7 @@ void write_file_content(int archive_fd, const char* file_name) {
     while ((bytes_read = read(file_fd, buffer, BLOCK_SIZE)) > 0) {
         if (write(archive_fd, buffer, bytes_read) != bytes_read) {
             printf("Error writing file contents\n"); //remove later
-            return;
+            return -1;
         }
         total_bytes_written += bytes_read;
     }
@@ -95,6 +102,7 @@ void write_file_content(int archive_fd, const char* file_name) {
     }
 
     close(file_fd);
+    return 0;
 }
 
 void write_stats(int archive_fd, posix_header file_data) {

@@ -3,17 +3,17 @@
 #include "main.h"
 #include "utils.h"
 
-void append_archive(int argc, char** argv) {
+int append_archive(int argc, char** argv) {
     if (argc < 4) {
         print_error(ERROR_MSG);
-        return;
+        return -1;
     }
 
     char* archive_name = argv[2];
     int archive_fd = open(archive_name, O_RDWR);
-    if (archive_fd == -1) {
+    if (archive_fd < 0) {
         printf("Failed to open archive file");
-        return;
+        return -1;
     }
 
     off_t pos = lseek(archive_fd, -(BLOCK_SIZE), SEEK_END);
@@ -57,6 +57,7 @@ void append_archive(int argc, char** argv) {
     // }
 
     close(archive_fd);
+    return 0;
 }
 
 // bool is_end_of_archive(int archive_fd, char* buffer) {
