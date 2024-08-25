@@ -6,7 +6,7 @@
 
 int create_archive(int argc, char** argv);
 int append_archive(int argc, char** argv);
-void list_archive(char* archive_name);
+int list_archive(char* archive_name);
 void update_archive(int argc, char** argv);
 void extract_archive(char* archive_name);
 

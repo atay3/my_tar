@@ -1,5 +1,4 @@
 #include "append.h"
-// #include "archive.h"
 #include "main.h"
 #include "utils.h"
 
@@ -12,7 +11,7 @@ int append_archive(int argc, char** argv) {
     char* archive_name = argv[2];
     int archive_fd = open(archive_name, O_RDWR);
     if (archive_fd < 0) {
-        printf("Failed to open archive file");
+        print_tar_error(archive_name);
         return -1;
     }
 
@@ -32,12 +31,7 @@ int append_archive(int argc, char** argv) {
             pos = lseek(archive_fd, size, SEEK_CUR);
             write_file_data(archive_fd, file_name);
             write_file_content(archive_fd, file_name);
-            // struct stat s;
-            // stat(file_name, &s);
-            // int fd = open(file_name, O_RDONLY);
-            // close(fd);
             i++;
-            // return;
         }
         pos -= BLOCK_SIZE;
         lseek(archive_fd, -pos, SEEK_CUR);

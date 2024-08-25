@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 	    status = append_archive(argc, argv);
     }
     else if (my_strcmp("-tf", option) == 0) {
-	    //list archive contents to stdout
+	    status = list_archive(argv[2]);
     }
     else if (my_strcmp("-uf", option) == 0) {
 	    //new entries are added only if they have a modification date newer than the corresponding entry in the archive. the -f option is req
