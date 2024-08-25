@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 	    status = list_archive(argv[2]);
     }
     else if (my_strcmp("-uf", option) == 0) {
-	    //new entries are added only if they have a modification date newer than the corresponding entry in the archive. the -f option is req
+	    status = update_archive(argc, argv);
     }
     else if (my_strcmp("-xf", option) == 0) {
 	    //extract to disk from the archive. if a file with the smae name appears more than once in the archive, each copy will be extracted, with later copies overwriting (replacing) earlier copies
