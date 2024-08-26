@@ -4,7 +4,7 @@
 int main(int argc, char** argv) {
 
     if (argc < 3) {
-        print_error(ERROR_MSG);
+        print_error(ERROR_USG);
         return EXIT_FAILURE;
     }
 
@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 	    status = update_archive(argc, argv);
     }
     else if (my_strcmp("-xf", option) == 0) {
-	    //extract to disk from the archive. if a file with the smae name appears more than once in the archive, each copy will be extracted, with later copies overwriting (replacing) earlier copies
+        status = extract_archive(argv[2]);
     }
 
 

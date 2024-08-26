@@ -73,7 +73,7 @@ int write_file_content(int archive_fd, const char* file_name) {
     int file_fd = open(file_name, O_RDONLY);
 
     if (file_fd < 0) {
-        printf("Error opening file\n"); //remove later
+        print_file_dne(file_name); //remove later
         return -1;
     }
 
@@ -83,21 +83,16 @@ int write_file_content(int archive_fd, const char* file_name) {
 
     while ((bytes_read = read(file_fd, buffer, BLOCK_SIZE)) > 0) {
         if (write(archive_fd, buffer, bytes_read) != bytes_read) {
-            printf("Error writing file contents\n"); //remove later
             return -1;
         }
         total_bytes_written += bytes_read;
     }
 
-    printf("total bytes written: %ld\n", total_bytes_written);
-
     ssize_t padding_size = BLOCK_SIZE - (total_bytes_written % BLOCK_SIZE);
     if (padding_size > 0) {
         char padding[BLOCK_SIZE] = {0};
         if (write(archive_fd, padding, padding_size) != padding_size) {
-            perror("Error writing padding");
-        } else {
-            printf("Wrote %ld bytes of padding\n", padding_size);
+            return -1;
         }
     }
 
@@ -123,29 +118,20 @@ void write_stats(int archive_fd, posix_header file_data) {
     write(archive_fd, file_data.devminor, 8);
     write(archive_fd, file_data.prefix, 155);
     write(archive_fd, file_data.offset, 12);
-
-    ssize_t header_written_size = 100 + 8 + 8 + 8 + 12 + 12 + 8 + 1 + 100 + 2 + 8 + 32 + 32 + 8 + 8 + 155 + 12; // 514
-    ssize_t padding_size = (BLOCK_SIZE - header_written_size);
-    // if (padding_size < 0) padding_size = BLOCK_SIZE + padding_size;
-    // else padding_size = BLOCK_SIZE - padding_size;
-    printf("padding after header: %ld, header size: %ld\n", padding_size, header_written_size);
-    
 }
 
 void handle_symlink(const char* file_name, posix_header file_data) {
     char link_target[100]; //buffer
     ssize_t length = readlink(file_name, link_target, sizeof(link_target) - 1);
 
-    if (length == -1) {
-        printf("Error reading symbolic link\n"); //remove later
-        return;
-    }
+    // if (length == -1) {
+    //     printf("Error reading symbolic link\n"); //remove later
+    //     return;
+    // }
     link_target[length] = '\0';
     linkname_to_octal(link_target, file_data.linkname);
     if (length < 99) pad_symlink(length, file_data.linkname);
     checksum(&file_data.checksum_num, file_data.linkname);
-
-    // Set the typeflag to indicate a symbolic link?
 }
 
 void pad_symlink(int length, char* linkname) {
@@ -204,14 +190,10 @@ void get_mode(mode_t mode, char* octal_str, unsigned int* sum) {
 }
 
 void checksum(unsigned int* sum, char* field) {
-    printf("field: %s, length: %d ", field, my_strlen(field));
-
     while (*field) {
         *sum += *field;
         field++;
     }
-
-    printf("checksum = %u\n", *sum);
 }
 
 void checksum_to_octal(int checksum, char* octal_str) {
@@ -228,12 +210,10 @@ void checksum_to_octal(int checksum, char* octal_str) {
     while (end_index >= 0) {
         octal_str[end_index--] = '0';
     }
-
-    printf("chksum: %s\n", octal_str);
 }
 
 void write_checksum(int archive_fd, unsigned int sum, char* octal_str) {
-    checksum(&sum, "        \0");
+    checksum(&sum, CHKSUM_REP);
     checksum_to_octal((int)sum, octal_str);
     write(archive_fd, octal_str, 8);
 }
@@ -295,7 +275,6 @@ void get_size(size_t size, char* octal_str, unsigned int* sum) {
     checksum(sum, octal_str);
 }
 
-
 void size_to_octal(size_t size, char* octal_str) {
     int end_index = 11;
     octal_str[end_index--] = '\0';
@@ -347,8 +326,6 @@ void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
 void get_version(char* octal_str, unsigned int* sum) {
     octal_str[0] = '0';
     octal_str[1] = '0';
-    // printf("ver : %s", version);
-    // checksum(sum, octal_str);
     checksum(sum, "\0\0");
 }
 
@@ -389,8 +366,6 @@ void get_devs(struct stat st, char* devmajor, char* devminor, unsigned int* sum)
             devmajor[i] = '\0';
             devminor[i] = '\0';
         }
-        // printf("devmajor: %s\n", devmajor);
-        // printf("devminor: %s\n", devminor);
     }
 }
 
