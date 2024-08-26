@@ -1,13 +1,12 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#define ERROR_USG "my_tar: You must provide one of the '-Acdtrux', '--delete' or '--test-label' options\n"
 
-#define ERROR_MSG "my_tar: Insufficient number of arguments\n"
-
-void create_archive(int argc, char** argv);
-void append_archive(int argc, char** argv);
-void list_archive(char* archive_name);
-void update_archive(int argc, char** argv);
-void extract_archive(char* archive_name);
+int create_archive(int argc, char** argv);
+int append_archive(int argc, char** argv);
+int list_archive(char* archive_name);
+int update_archive(int argc, char** argv);
+int extract_archive(char* archive_name);
 
 #endif
