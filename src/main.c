@@ -27,7 +27,5 @@ int main(int argc, char** argv) {
         status = extract_archive(argv[2]);
     }
 
-
-
     return status;
 }

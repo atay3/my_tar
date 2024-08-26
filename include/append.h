@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include "archive.h"
 
-// bool is_end_of_archive(int archive_fd, char* buffer);
 bool is_end_of_archive(posix_header* file_data);
 
 #endif
