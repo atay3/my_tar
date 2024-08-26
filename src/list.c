@@ -4,11 +4,6 @@
 #include "utils.h"
 
 int list_archive(char* archive_name) {
-    // if (argc < 3) {
-    //     print_error(ERROR_MSG);
-    //     return -1;
-    // }
-
     int archive_fd = open(archive_name, O_RDONLY);
     if (archive_fd < 0) {
         print_tar_error(archive_name);
@@ -25,7 +20,7 @@ int list_archive(char* archive_name) {
         
         print_files(file_data.name);
 
-        int file_size = strtol(file_data.size, NULL, 8);
+        int file_size = strtoll(file_data.size, NULL, 8);
 
         // skip the file content blocks
         int blocks_to_skip = (file_size + BLOCK_SIZE - 1) / BLOCK_SIZE;

@@ -4,10 +4,10 @@
 
 #define ERROR_MSG "my_tar: Insufficient number of arguments\n"
 
-int create_archive(int argc, char** argv);
-int append_archive(int argc, char** argv);
-int list_archive(char* archive_name);
-int update_archive(int argc, char** argv);
+void create_archive(int argc, char** argv);
+void append_archive(int argc, char** argv);
+void list_archive(char* archive_name);
+void update_archive(int argc, char** argv);
 void extract_archive(char* archive_name);
 
 #endif

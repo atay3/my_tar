@@ -11,6 +11,7 @@
 #define BLOCK_SIZE 512
 #define MIN_ARCHIVE_SIZE 10240
 #define MAGIC "ustar  \0"
+#define CHKSUM_REP "        \0"
 
 typedef struct {
     char name[100]; // file name

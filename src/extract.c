@@ -1,0 +1,54 @@
+#include "extract.h"
+
+int extract_archive(char* archive_name) {
+    int archive_fd = open(archive_name, O_RDONLY);
+    if (archive_fd < 0) {
+        print_tar_error(archive_name);
+        return -1;
+    }
+    
+    posix_header file_data;
+
+    while (read(archive_fd, &file_data, BLOCK_SIZE) == BLOCK_SIZE) {
+        if (file_data.name[0] == '\0') {
+            break; // end of archive
+        }
+
+        unsigned int file_size = strtoll(file_data.size, NULL, 8);
+
+        if (file_data.typeflag[0] == '5') { // directory
+            mkdir(file_data.name, 0755);
+        } else if (file_data.typeflag[0] == '0' || file_data.typeflag[0] == '\0') { // regular file
+            int out_fd = open(file_data.name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            if (out_fd < 0) { // unable to create file
+                close(archive_fd);
+                return -1;
+            }
+
+            // read file contents
+            char buffer[BLOCK_SIZE];
+            int bytes_to_read = file_size;
+            while (bytes_to_read > 0) {
+                int bytes = read(archive_fd, buffer, (bytes_to_read < BLOCK_SIZE) ? bytes_to_read : BLOCK_SIZE);
+                if (bytes < 0) { // error reading file
+                    close(out_fd);
+                    close(archive_fd);
+                    return -1;
+                }
+                write(out_fd, buffer, bytes);
+                bytes_to_read -= bytes;
+            }
+
+            close(out_fd);
+
+            // skip the padding if necessary
+            if (file_size % BLOCK_SIZE != 0) {
+                lseek(archive_fd, BLOCK_SIZE - (file_size % BLOCK_SIZE), SEEK_CUR);
+            }
+        }
+    }
+
+    close(archive_fd);
+
+    return 0;
+}

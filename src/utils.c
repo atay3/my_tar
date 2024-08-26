@@ -1,11 +1,7 @@
 #include "utils.h"
 
-void print_message(char* message) {
-    write(1, message, my_strlen(message));
-}
-
 void print_error(char* message) {
-    write(2, message, my_strlen(message));
+    write(STDERR_FILENO, message, my_strlen(message));
 }
 
 int my_strlen(const char* str_1) {
@@ -69,7 +65,7 @@ int my_strcmp(const char* str_1, const char* str_2) {
 //     return 0; // memory blocks are equal
 // }
 
-void print_file_dne(char* file_name) {
+void print_file_dne(const char* file_name) {
     char* msg_1 = "my_tar: ";
     char* msg_2 = ": Cannot stat: No such file or directory\n";
     write(STDERR_FILENO, msg_1, my_strlen(msg_1));
@@ -77,7 +73,7 @@ void print_file_dne(char* file_name) {
     write(STDERR_FILENO, msg_2, my_strlen(msg_2));
 }
 
-void print_tar_error(char* archive_name) {
+void print_tar_error(const char* archive_name) {
     char* msg_1 = "my_tar: Cannot open ";
     char newline = '\n';
     write(STDERR_FILENO, msg_1, my_strlen(msg_1));
