@@ -13,3 +13,5 @@ my_tar
 # Ignore specific files or directories
 tests.sh
 mirror.sh
+
+.vscode

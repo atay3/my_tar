@@ -7,9 +7,9 @@
 #include <time.h>
 #include <pwd.h>
 #include <grp.h>
+#include <dirent.h>
+#include <limits.h>
 
-#define BLOCK_SIZE 512
-#define MIN_ARCHIVE_SIZE 10240
 #define MAGIC "ustar  \0"
 #define CHKSUM_REP "        \0"
 
@@ -39,7 +39,8 @@ void write_stats(int archive_fd, posix_header file_data);
 void handle_symlink(const char* file_name, posix_header file_data);
 void pad_symlink(int length, char* linkname);
 void linkname_to_octal(char* linkname, char* octal_str);
-void get_name(const char* file_name, char* name, unsigned int* sum);
+// void get_name(const char* file_name, char* name, unsigned int* sum);
+void get_name(const char* file_name, char* name, char typeflag, unsigned int* sum);
 void get_mode(mode_t mode, char* octal_str, unsigned int* sum);
 void mode_to_octal(mode_t mode, char* str, int start_index);
 void get_uid(uid_t uid, char* octal_str, unsigned int* sum);
@@ -62,5 +63,7 @@ void get_devs(struct stat st, char* devmajor, char* devminor, unsigned int* sum)
 void get_prefix(const char* file_name, char* prefix, unsigned int* sum);
 void int_to_octal(int value, char* octal_str, int size);
 void set_offset(char* offset);
+void get_dir(int archive_fd, const char* dir_name);
+
 
 #endif
