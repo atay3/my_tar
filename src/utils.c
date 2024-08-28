@@ -68,3 +68,15 @@ void print_tar_error(const char* archive_name) {
     write(STDERR_FILENO, archive_name, my_strlen(archive_name));
     write(STDERR_FILENO, &newline, 1);
 }
+
+void print_end_block(int archive_fd) {
+    char end_block[BLOCK_SIZE] = {0};
+    
+    // calculate current size of the archive
+    off_t archive_size = lseek(archive_fd, 0, SEEK_END);
+
+    while (archive_size < MIN_ARCHIVE_SIZE) {
+        write(archive_fd, end_block, BLOCK_SIZE);
+        archive_size += BLOCK_SIZE;
+    }
+}

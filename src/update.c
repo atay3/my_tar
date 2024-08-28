@@ -14,7 +14,7 @@ int update_archive(int argc, char** argv) {
     int found = 0;
     off_t pos = 0;
 
-    while (read(archive_fd, &file_data, BLOCK_SIZE) == BLOCK_SIZE) {
+    while (read(archive_fd, &file_data, BLOCK_SIZE) == BLOCK_SIZE && i < argc) {
         if (file_data.name[0] == '\0') {
             break;
         }
@@ -28,11 +28,11 @@ int update_archive(int argc, char** argv) {
 
         if (my_strcmp(file_data.name, file_name) == 0) {
             found = 1;
-            unsigned int archive_mtime = strtol(file_data.time, NULL, 8);
-            printf("Found file: %s, archive time: %u, file time: %ld\n", file_name, archive_mtime, file_stat.st_mtime);
+            unsigned int archive_mtime = strtoll(file_data.time, NULL, 8);
+            // printf("Found file: %s, archive time: %u, file time: %ld\n", file_name, archive_mtime, file_stat.st_mtime);
 
             if (file_stat.st_mtime > archive_mtime) {
-                printf("Updating: %s\n", file_name);
+                // printf("Updating: %s\n", file_name);
                 lseek(archive_fd, pos, SEEK_SET);
                 write_file_data(archive_fd, file_name);
                 write_file_content(archive_fd, file_name);
@@ -52,10 +52,7 @@ int update_archive(int argc, char** argv) {
         }
     }
 
-    printf("found: %d\n", found);
-
     if (found == 0) {
-        // lseek(archive_fd, 0, SEEK_END);
         append_archive(argc, argv);
     }
 

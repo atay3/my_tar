@@ -16,7 +16,15 @@ int extract_archive(char* archive_name) {
 
         unsigned int file_size = strtoll(file_data.size, NULL, 8);
 
+        printf("File name: %s\n", file_data.name);
+        printf("File size: %s\n", file_data.size);
+        printf("Checksum: %s\n", file_data.checksum_str);
+        printf("Mode: %s\n", file_data.mode);
+        printf("Typeflag: %c\n", file_data.typeflag[0]);
+        
+
         if (file_data.typeflag[0] == '5') { // directory
+            printf("DIRECTORYY\n");
             mkdir(file_data.name, 0755);
         } else if (file_data.typeflag[0] == '0' || file_data.typeflag[0] == '\0') { // regular file
             int out_fd = open(file_data.name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -30,7 +38,7 @@ int extract_archive(char* archive_name) {
             int bytes_to_read = file_size;
             while (bytes_to_read > 0) {
                 int bytes = read(archive_fd, buffer, (bytes_to_read < BLOCK_SIZE) ? bytes_to_read : BLOCK_SIZE);
-                if (bytes < 0) { // error reading file
+                if (bytes < 0) {
                     close(out_fd);
                     close(archive_fd);
                     return -1;

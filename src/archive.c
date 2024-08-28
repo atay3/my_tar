@@ -19,15 +19,7 @@ int create_archive(int argc, char** argv) {
         }
     }
 
-    char end_block[BLOCK_SIZE] = {0};
-    
-    // calculate current size of the archive
-    off_t archive_size = lseek(archive_fd, 0, SEEK_END);
-
-    while (archive_size < MIN_ARCHIVE_SIZE) {
-        write(archive_fd, end_block, BLOCK_SIZE);
-        archive_size += BLOCK_SIZE;
-    }
+    print_end_block(archive_fd);
 
     close(archive_fd);
     return 0;
@@ -47,15 +39,15 @@ int write_file_data(int archive_fd, const char* file_name) {
         handle_symlink(file_name, file_data);
     } else pad_symlink(0, file_data.linkname);
     
-
-    get_name(file_name, file_data.name, &file_data.checksum_num);
+    get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
+    // get_name(file_name, file_data.name, &file_data.checksum_num);/
+    get_name(file_name, file_data.name, file_data.typeflag[0], &file_data.checksum_num);
     get_prefix(file_name, file_data.prefix, &file_data.checksum_num);
     get_mode(file_stat.st_mode, file_data.mode, &file_data.checksum_num);
     get_uid(file_stat.st_uid, file_data.uid, &file_data.checksum_num);
     get_gid(file_stat.st_gid, file_data.gid, &file_data.checksum_num);
     get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
-    get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
     // get_version(file_stat.st_mode, file_data.version, &file_data.checksum_num);
     get_version(file_data.version, &file_data.checksum_num);
     checksum(&file_data.checksum_num, MAGIC);
@@ -66,7 +58,49 @@ int write_file_data(int archive_fd, const char* file_name) {
 
     write_stats(archive_fd, file_data);
 
+    if (file_data.typeflag[0] == '5') {
+        get_dir(archive_fd, file_name);
+    }
+
     return 0;
+}
+
+void get_dir(int archive_fd, const char* dir_name) {
+    DIR* dir = opendir(dir_name);
+
+    struct dirent* entry;
+    char path[PATH_MAX];
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (my_strcmp(entry->d_name, ".") == 0 || my_strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        size_t dir_len = my_strlen(dir_name);
+        size_t file_len = my_strlen(entry->d_name);
+
+        if (dir_len + file_len + 2 < sizeof(path)) { // +2 for slash and null terminator
+            my_strncpy(path, dir_name, dir_len);
+
+            if (path[dir_len - 1] != '/') {
+                path[dir_len] = '/';
+                dir_len++;
+            }
+
+            my_strncpy(path + dir_len, entry->d_name, file_len + 1); // +1 to include null terminator
+            path[dir_len + file_len] = '\0';
+
+            if (entry->d_type == DT_DIR) {
+                write_file_data(archive_fd, path);
+                get_dir(archive_fd, path);
+            } else if (entry->d_type == DT_REG) {
+                write_file_data(archive_fd, path);
+                write_file_content(archive_fd, path);
+            }
+        }
+    }
+
+    closedir(dir);
 }
 
 int write_file_content(int archive_fd, const char* file_name) {
@@ -124,10 +158,6 @@ void handle_symlink(const char* file_name, posix_header file_data) {
     char link_target[100]; //buffer
     ssize_t length = readlink(file_name, link_target, sizeof(link_target) - 1);
 
-    // if (length == -1) {
-    //     printf("Error reading symbolic link\n"); //remove later
-    //     return;
-    // }
     link_target[length] = '\0';
     linkname_to_octal(link_target, file_data.linkname);
     if (length < 99) pad_symlink(length, file_data.linkname);
@@ -168,9 +198,24 @@ void linkname_to_octal(char* linkname, char* octal_str) {
     octal_str[index] = '\0';
 }
 
-void get_name(const char* file_name, char* name, unsigned int* sum) {
+// void get_name(const char* file_name, char* name, unsigned int* sum) {
+//     my_strncpy(name, file_name, my_strlen(file_name));  
+//     checksum(sum, name);
+//     if (my_strlen(name) < 99) {
+//         for (int i = my_strlen(name); i < 100; i++) {
+//             name[i] = '\0';
+//         }
+//     }
+// }
+
+void get_name(const char* file_name, char* name, char typeflag, unsigned int* sum) {
     my_strncpy(name, file_name, my_strlen(file_name));
-    checksum(sum, name);
+    if (typeflag == '5') {
+        name[my_strlen(file_name)] = '/';
+        checksum(sum, name);
+    } else {
+        checksum(sum, name);
+    }
     if (my_strlen(name) < 99) {
         for (int i = my_strlen(name); i < 100; i++) {
             name[i] = '\0';
@@ -291,17 +336,27 @@ void size_to_octal(size_t size, char* octal_str) {
 }
 
 void time_to_octal(time_t time, char* octal_str) {
-    int end_index = 11;
-    octal_str[end_index--] = '\0';
+    // int end_index = 11;
+    // octal_str[end_index--] = '\0';
 
+    // while (time != 0) {
+    //     uint8_t octal_digit = time & 0b111;
+    //     octal_str[end_index--] = '0' + octal_digit;
+    //     time >>= 3;
+    // }
+
+    // while (end_index >= 0) {
+    //     octal_str[end_index--] = '0';
+    // }
+    size_t length = 12;
+    for (size_t i = 0; i < length; i++) {
+        octal_str[i] = '\0';
+    }
+    int end_index = 10;
     while (time != 0) {
         uint8_t octal_digit = time & 0b111;
         octal_str[end_index--] = '0' + octal_digit;
         time >>= 3;
-    }
-
-    while (end_index >= 0) {
-        octal_str[end_index--] = '0';
     }
 }
 
@@ -311,17 +366,17 @@ void get_time(time_t time, char* octal_str, unsigned int* sum) {
 }
 
 void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
-    mode_t typeflag = mode & S_IFMT; //extract file type bits
-    octal_str[0] = '0' + typeflag;
+    // mode_t typeflag = mode & S_IFMT; //extract file type bits
+    if (S_ISREG(mode)) {
+        octal_str[0] = '0';
+    } else if (S_ISDIR(mode)) {
+        octal_str[0] = '5';
+    } else if (S_ISLNK(mode)) {
+        octal_str[0] = '2';
+    }
+    // octal_str[0] = '0' + typeflag;
     checksum(sum, octal_str);
 }
-
-// void get_version(mode_t mode, char* octal_str, unsigned int* sum) {
-//     octal_str[0] = '0' + ((mode >> 6) & 0b111);
-//     octal_str[1] = '0' + ((mode >> 3) & 0b111);
-//     // printf("ver : %s", version);
-//     checksum(sum, octal_str);
-// }
 
 void get_version(char* octal_str, unsigned int* sum) {
     octal_str[0] = '0';
