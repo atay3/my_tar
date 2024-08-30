@@ -46,10 +46,8 @@ int update_archive(int argc, char** argv) {
         lseek(archive_fd, blocks_to_skip * BLOCK_SIZE, SEEK_CUR);
         pos += BLOCK_SIZE + blocks_to_skip * BLOCK_SIZE;
 
-        if (i < argc) {
-            i++;
-            found = 0;
-        }
+        i++;
+        found = 0;
     }
 
     if (found == 0) {

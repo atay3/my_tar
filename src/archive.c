@@ -40,13 +40,14 @@ int write_file_data(int archive_fd, const char* file_name) {
     } else pad_symlink(0, file_data.linkname);
     
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
-    // get_name(file_name, file_data.name, &file_data.checksum_num);/
+    // get_name(file_name, file_data.name, &file_data.checksum_num);
     get_name(file_name, file_data.name, file_data.typeflag[0], &file_data.checksum_num);
     get_prefix(file_name, file_data.prefix, &file_data.checksum_num);
     get_mode(file_stat.st_mode, file_data.mode, &file_data.checksum_num);
     get_uid(file_stat.st_uid, file_data.uid, &file_data.checksum_num);
     get_gid(file_stat.st_gid, file_data.gid, &file_data.checksum_num);
-    get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
+    // get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
+    get_size(file_stat.st_size, file_data.typeflag[0], file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
     // get_version(file_stat.st_mode, file_data.version, &file_data.checksum_num);
     get_version(file_data.version, &file_data.checksum_num);
@@ -210,7 +211,7 @@ void linkname_to_octal(char* linkname, char* octal_str) {
 
 void get_name(const char* file_name, char* name, char typeflag, unsigned int* sum) {
     my_strncpy(name, file_name, my_strlen(file_name));
-    if (typeflag == '5') {
+    if (typeflag == DIRTYPE) {
         name[my_strlen(file_name)] = '/';
         checksum(sum, name);
     } else {
@@ -315,8 +316,21 @@ void gid_to_octal(gid_t gid, char* octal_str) {
     }
 }
 
-void get_size(size_t size, char* octal_str, unsigned int* sum) {
-    size_to_octal(size, octal_str);
+// void get_size(size_t size, char* octal_str, unsigned int* sum) {
+//     size_to_octal(size, octal_str);
+//     checksum(sum, octal_str);
+// }
+
+void get_size(size_t size, char typeflag, char* octal_str, unsigned int* sum) {
+    if (typeflag == DIRTYPE) {
+        int end_index = 11;
+        for (int i = 0; i < end_index; i++) {
+            octal_str[i] = '0';
+        }
+        octal_str[end_index] = '\0';
+    } else {
+        size_to_octal(size, octal_str);
+    }
     checksum(sum, octal_str);
 }
 
