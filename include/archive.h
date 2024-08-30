@@ -12,6 +12,9 @@
 
 #define MAGIC "ustar  \0"
 #define CHKSUM_REP "        \0"
+#define REGTYPE  '0'
+#define AREGTYPE '\0'
+#define DIRTYPE  '5'
 
 typedef struct {
     char name[100]; // file name
@@ -47,7 +50,8 @@ void get_uid(uid_t uid, char* octal_str, unsigned int* sum);
 void uid_to_octal(uid_t uid, char* octal_str);
 void get_gid(gid_t gid, char* octal_str, unsigned int* sum);
 void gid_to_octal(gid_t gid, char* octal_str);
-void get_size(size_t size, char* octal_str, unsigned int* sum);
+// void get_size(size_t size, char* octal_str, unsigned int* sum);
+void get_size(size_t size, char typeflag, char* octal_str, unsigned int* sum);
 void size_to_octal(size_t size, char* octal_str);
 void get_time(time_t time, char* octal_str, unsigned int* sum);
 void time_to_octal(time_t time, char* octal_str);

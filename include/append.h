@@ -9,5 +9,6 @@
 #include "archive.h"
 
 bool is_end_of_archive(posix_header* file_data);
+bool is_valid_header(const posix_header* header);
 
 #endif
