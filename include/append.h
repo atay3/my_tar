@@ -10,5 +10,6 @@
 
 bool is_end_of_archive(posix_header* file_data);
 bool is_valid_header(const posix_header* header);
+posix_header* write_file_data_and_return(int archive_fd, const char* file_name);
 
 #endif

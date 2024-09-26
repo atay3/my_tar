@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 f1="/home/ashtay/my_tar/file.tar"
-f2="/home/ashtay/my_tar/file2.tar"
+f2="/home/ashtay/my_tar/file_copy.tar"
 f3="README.md"
 
 rm -f $f1 $f2

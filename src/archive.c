@@ -1,6 +1,6 @@
-#include "main.h"
-#include "archive.h"
-#include "utils.h"
+#include "../include/main.h"
+#include "../include/archive.h"
+#include "../include/utils.h"
 
 int create_archive(int argc, char** argv) {
     char* archive_name = argv[2];
@@ -40,16 +40,13 @@ int write_file_data(int archive_fd, const char* file_name) {
     } else pad_symlink(0, file_data.linkname);
     
     get_typeflag(file_stat.st_mode, file_data.typeflag, &file_data.checksum_num);
-    // get_name(file_name, file_data.name, &file_data.checksum_num);
     get_name(file_name, file_data.name, file_data.typeflag[0], &file_data.checksum_num);
     get_prefix(file_name, file_data.prefix, &file_data.checksum_num);
     get_mode(file_stat.st_mode, file_data.mode, &file_data.checksum_num);
     get_uid(file_stat.st_uid, file_data.uid, &file_data.checksum_num);
     get_gid(file_stat.st_gid, file_data.gid, &file_data.checksum_num);
-    // get_size(file_stat.st_size, file_data.size, &file_data.checksum_num);
     get_size(file_stat.st_size, file_data.typeflag[0], file_data.size, &file_data.checksum_num);
     get_time(file_stat.st_mtim.tv_sec, file_data.time, &file_data.checksum_num);
-    // get_version(file_stat.st_mode, file_data.version, &file_data.checksum_num);
     get_version(file_data.version, &file_data.checksum_num);
     checksum(&file_data.checksum_num, MAGIC);
     get_user_name(file_stat.st_uid, file_data.user, &file_data.checksum_num);
@@ -59,7 +56,7 @@ int write_file_data(int archive_fd, const char* file_name) {
 
     write_stats(archive_fd, file_data);
 
-    if (file_data.typeflag[0] == '5') {
+    if (file_data.typeflag[0] == DIRTYPE) {
         get_dir(archive_fd, file_name);
     }
 
@@ -108,7 +105,7 @@ int write_file_content(int archive_fd, const char* file_name) {
     int file_fd = open(file_name, O_RDONLY);
 
     if (file_fd < 0) {
-        print_file_dne(file_name); //remove later
+        print_file_dne(file_name);
         return -1;
     }
 
@@ -153,6 +150,8 @@ void write_stats(int archive_fd, posix_header file_data) {
     write(archive_fd, file_data.devminor, 8);
     write(archive_fd, file_data.prefix, 155);
     write(archive_fd, file_data.offset, 12);
+    off_t l = lseek(archive_fd, 0, SEEK_CUR);
+    printf("lseek: %ld\n", l);
 }
 
 void handle_symlink(const char* file_name, posix_header file_data) {

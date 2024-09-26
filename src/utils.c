@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../include/utils.h"
 
 void print_error(char* message) {
     write(STDERR_FILENO, message, my_strlen(message));
