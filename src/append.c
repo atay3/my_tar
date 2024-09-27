@@ -10,7 +10,7 @@ int append_archive(int argc, char** argv) {
         return -1;
     }
 
-    off_t pos = lseek(archive_fd, -(2 * BLOCK_SIZE), SEEK_END);
+    off_t pos = lseek(archive_fd, -(15 * BLOCK_SIZE), SEEK_END);
     printf("lseek pos: %ld\n", pos);
     
     posix_header* file_data = NULL;

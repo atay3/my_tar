@@ -9,18 +9,18 @@ int extract_archive(char* archive_name) {
     
     posix_header file_data;
 
-    while (read(archive_fd, &file_data, BLOCK_SIZE) == BLOCK_SIZE) {
-        // if (file_data.name[0] == '\0') {
-        //     break; // end of archive
-        // }
+    while (read(archive_fd, &file_data, BLOCK_SIZE) > 0) {
+        if (file_data.name[0] == '\0') {
+            break; // end of archive
+        }
 
         unsigned int file_size = strtoll(file_data.size, NULL, 8);
 
-        printf("Raw header data: ");
-        for (int i = 0; i < BLOCK_SIZE; i++) {
-            printf("%02x ", ((unsigned char*)&file_data)[i]);
-        }
-        printf("\n");
+        // printf("Raw header data: ");
+        // for (int i = 0; i < BLOCK_SIZE; i++) {
+        //     printf("%02x ", ((unsigned char*)&file_data)[i]);
+        // }
+        // printf("\n");
 
         printf("File name: %s\n", file_data.name);
         printf("File size: %s\n", file_data.size);

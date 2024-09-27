@@ -198,16 +198,6 @@ void linkname_to_octal(char* linkname, char* octal_str) {
     octal_str[index] = '\0';
 }
 
-// void get_name(const char* file_name, char* name, unsigned int* sum) {
-//     my_strncpy(name, file_name, my_strlen(file_name));  
-//     checksum(sum, name);
-//     if (my_strlen(name) < 99) {
-//         for (int i = my_strlen(name); i < 100; i++) {
-//             name[i] = '\0';
-//         }
-//     }
-// }
-
 void get_name(const char* file_name, char* name, char typeflag, unsigned int* sum) {
     my_strncpy(name, file_name, my_strlen(file_name));
     if (typeflag == DIRTYPE) {
@@ -315,11 +305,6 @@ void gid_to_octal(gid_t gid, char* octal_str) {
     }
 }
 
-// void get_size(size_t size, char* octal_str, unsigned int* sum) {
-//     size_to_octal(size, octal_str);
-//     checksum(sum, octal_str);
-// }
-
 void get_size(size_t size, char typeflag, char* octal_str, unsigned int* sum) {
     if (typeflag == DIRTYPE) {
         int end_index = 11;
@@ -349,18 +334,6 @@ void size_to_octal(size_t size, char* octal_str) {
 }
 
 void time_to_octal(time_t time, char* octal_str) {
-    // int end_index = 11;
-    // octal_str[end_index--] = '\0';
-
-    // while (time != 0) {
-    //     uint8_t octal_digit = time & 0b111;
-    //     octal_str[end_index--] = '0' + octal_digit;
-    //     time >>= 3;
-    // }
-
-    // while (end_index >= 0) {
-    //     octal_str[end_index--] = '0';
-    // }
     size_t length = 12;
     for (size_t i = 0; i < length; i++) {
         octal_str[i] = '\0';
@@ -379,7 +352,6 @@ void get_time(time_t time, char* octal_str, unsigned int* sum) {
 }
 
 void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
-    // mode_t typeflag = mode & S_IFMT; //extract file type bits
     if (S_ISREG(mode)) {
         octal_str[0] = '0';
     } else if (S_ISDIR(mode)) {
@@ -387,7 +359,6 @@ void get_typeflag(mode_t mode, char* octal_str, unsigned int* sum) {
     } else if (S_ISLNK(mode)) {
         octal_str[0] = '2';
     }
-    // octal_str[0] = '0' + typeflag;
     checksum(sum, octal_str);
 }
 
