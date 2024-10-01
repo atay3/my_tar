@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../include/utils.h"
 
 void print_error(char* message) {
     write(STDERR_FILENO, message, my_strlen(message));
@@ -76,7 +76,23 @@ void print_end_block(int archive_fd) {
     off_t archive_size = lseek(archive_fd, 0, SEEK_END);
 
     while (archive_size < MIN_ARCHIVE_SIZE) {
-        write(archive_fd, end_block, BLOCK_SIZE);
+        int diff = MIN_ARCHIVE_SIZE - archive_size;
+        if (diff >= BLOCK_SIZE) {
+            write(archive_fd, end_block, BLOCK_SIZE);
+        } else if (diff < BLOCK_SIZE) {
+            write(archive_fd, end_block, BLOCK_SIZE - diff);
+        }
         archive_size += BLOCK_SIZE;
     }
+}
+
+void* my_memcpy(void* dest, const void* src, size_t n) {
+    char* d = (char*)dest;
+    const char* s = (const char*)src;
+
+    for (size_t i = 0; i < n; i++) {
+        d[i] = s[i];
+    }
+
+    return dest;
 }

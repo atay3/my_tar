@@ -16,5 +16,6 @@ char* my_strdup(const char* str_1);
 char* my_strncpy(char* str_1, const char* str_2, int length);
 int my_strcmp(const char* str_1, const char* str_2);
 void print_end_block(int archive_fd);
+void* my_memcpy(void* dest, const void* src, size_t n);
 
 #endif
