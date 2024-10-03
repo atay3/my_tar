@@ -12,6 +12,8 @@ int extract_archive(char* archive_name) {
         my_memcpy(&file_data, buffer, BLOCK_SIZE);
         unsigned char typeflag = buffer[156];
 
+        if (*file_data.name == '\0') break;
+
         // if (typeflag == DIRTYPE) {
         //     printf("Directory detected\n");
         // } else {
