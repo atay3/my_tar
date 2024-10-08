@@ -55,24 +55,3 @@ void go_to_end_tar_file(int archive_fd) {
         counter++;
     }
 }
-
-
-bool is_end_of_archive(posix_header* file_data) {
-    for (int i = 0; i < BLOCK_SIZE; i++) {
-        if (i == 6) continue;
-        if (((const char*)file_data)[i] != '\0') {
-            printf("Non-null byte found: %d\n", ((const char*)file_data)[i]);
-            return false;
-        }
-    }
-    return true;
-}
-
-bool is_valid_header(const posix_header* header) {
-    for (int i = 0; i < 100; ++i) {
-        if (header->name[i] != '\0') {
-            return true;
-        }
-    }
-    return false;
-}
