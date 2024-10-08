@@ -1,6 +1,6 @@
-#include "../include/main.h"
-#include "../include/archive.h"
-#include "../include/utils.h"
+#include "main.h"
+#include "archive.h"
+#include "utils.h"
 
 int create_archive(int argc, char** argv) {
     char* archive_name = argv[2];
