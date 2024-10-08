@@ -6,31 +6,24 @@ int extract_archive(char* archive_name) {
         print_tar_error(archive_name);
         return -1;
     }
+
     unsigned char buffer[BLOCK_SIZE];
     posix_header file_data;
+
     while (read(archive_fd, buffer, BLOCK_SIZE) > 0) {
         my_memcpy(&file_data, buffer, BLOCK_SIZE);
         unsigned char typeflag = buffer[156];
 
-        if (*file_data.name == '\0') break;
-
-        // if (typeflag == DIRTYPE) {
-        //     printf("Directory detected\n");
-        // } else {
-        //     printf("Not a directory. Typeflag: %c (hex: %02x)\n", typeflag, typeflag);
-        // }
+        if (file_data.name[0] == '\0') break;
+        
         unsigned int file_size = strtoll(file_data.size, NULL, 8);
 
         if (typeflag == DIRTYPE) { // directory
-            printf("DIRECTORY\n");
-            printf("Creating directory: %s\n", file_data.name);
-
             if (mkdir(file_data.name, 0755) < 0) {
-                printf("Error creating directory\n");
+                print_tar_error(file_data.name);
                 return -1;
             }
         } else if (typeflag == REGTYPE || typeflag == AREGTYPE) { // regular file
-            printf("REG FILE\n");
             int out_fd = open(file_data.name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (out_fd < 0) { // unable to create file
                 close(archive_fd);

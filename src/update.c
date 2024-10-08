@@ -29,10 +29,7 @@ int update_archive(int argc, char** argv) {
         if (my_strcmp(file_data.name, file_name) == 0) {
             found = 1;
             unsigned int archive_mtime = strtoll(file_data.time, NULL, 8);
-            // printf("Found file: %s, archive time: %u, file time: %ld\n", file_name, archive_mtime, file_stat.st_mtime);
-
             if (file_stat.st_mtime > archive_mtime) {
-                // printf("Updating: %s\n", file_name);
                 lseek(archive_fd, pos, SEEK_SET);
                 write_file_data(archive_fd, file_name);
                 write_file_content(archive_fd, file_name);
