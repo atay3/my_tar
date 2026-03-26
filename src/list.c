@@ -1,7 +1,7 @@
-#include "list.h"
-#include "archive.h"
-#include "main.h"
-#include "utils.h"
+#include "../include/list.h"
+#include "../include/archive.h"
+#include "../include/main.h"
+#include "../include/utils.h"
 
 int list_archive(char* archive_name) {
     int archive_fd = open(archive_name, O_RDONLY);

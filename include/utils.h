@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 #define MIN_ARCHIVE_SIZE 10240
 #define BLOCK_SIZE 512

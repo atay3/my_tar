@@ -1,4 +1,4 @@
-#include "extract.h"
+#include "../include/extract.h"
 
 int extract_archive(char* archive_name) {
     int archive_fd = open(archive_name, O_RDONLY);

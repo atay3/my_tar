@@ -16,4 +16,4 @@ mirror.sh
 .vscode
 *.tar
 a.out
-testing.c
+*.txt

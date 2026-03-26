@@ -1,6 +1,6 @@
-#include "main.h"
-#include "archive.h"
-#include "utils.h"
+#include "../include/main.h"
+#include "../include/archive.h"
+#include "../include/utils.h"
 
 int create_archive(int argc, char** argv) {
     char* archive_name = argv[2];
@@ -150,8 +150,8 @@ void write_stats(int archive_fd, posix_header file_data) {
     write(archive_fd, file_data.devminor, 8);
     write(archive_fd, file_data.prefix, 155);
     write(archive_fd, file_data.offset, 12);
-    off_t l = lseek(archive_fd, 0, SEEK_CUR);
-    printf("lseek: %ld\n", l);
+    // off_t l = lseek(archive_fd, 0, SEEK_CUR);
+    // printf("lseek: %ld\n", l);
 }
 
 void handle_symlink(const char* file_name, posix_header file_data) {

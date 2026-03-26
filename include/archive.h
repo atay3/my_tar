@@ -9,6 +9,7 @@
 #include <grp.h>
 #include <dirent.h>
 #include <limits.h>
+#include <linux/limits.h>
 
 #define MAGIC "ustar  \0"
 #define CHKSUM_REP "        \0"

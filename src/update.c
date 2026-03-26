@@ -1,4 +1,4 @@
-#include "update.h"
+#include "../include/update.h"
 
 int update_archive(int argc, char** argv) {
     char* archive_name = argv[2];
